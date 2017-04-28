@@ -12,11 +12,10 @@ This package contains scripts for generating simulated CMB datasets (current and
 * Foregrounds
     * Generate foregrounds maps (dust, synchrotron, freefree, spinningdust, ...) based on the PySM
 * Frequency coverage
-    * Single frequency implemented for the moment
-    * Multi-frequency (TBD)
+    * Multi-frequency
 * Sky coverage
     * The inputs are based on a potential future CMB ground-based experiment.
-    * (TBD) include a call to ScanStrategy code
+    * Include a call to ScanStrategy code (TBD)
 
 ### Before starting
 This code has the following dependencies:
