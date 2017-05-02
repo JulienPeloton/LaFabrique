@@ -34,18 +34,22 @@ def change_coord_sys(h, coord_out='C'):
     coord_sys = np.where(np.transpose(h)[0] == 'COORDSYS')[0][0]
     h[coord_sys] = ('COORDSYS', coord_out)
 
-# def file_path(o,j):
-#     comps = str()
-#     for k in sorted(o.components):
-#         comps=''.join([comps,k[0:5],'_'])
-#     fname = ''.join([o.output_prefix,comps, str(o.output_frequency[j]).replace('.', 'p'),'_', str(o.nside), '.fits'])
-#     path = os.path.join(o.output_dir, fname)
-#     return path
-#
-# def write_output_single(sky_freq,o,Config,i,extra_header):
-#     path = file_path(o,i)
-#     hp.write_map(path, hp.ud_grade(sky_freq, nside_out=o.nside), coord=o.output_coordinate_system, \
-#         column_units = ''.join(o.output_units), column_names = None, extra_header = extra_header)
+def benchmark(func):
+    """
+    Print the seconds that a function takes to execute.
+    """
+    if DEBUG is True:
+        def wrapper(*args, **kwargs):
+            t0 = time()
+            res = func(*args, **kwargs)
+            print("function @{0} took {1:0.3f} seconds".format(
+                func.__name__, time() - t0))
+            return res
+    else:
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+    return wrapper
+
 
 def rot_planck_map(data, header=None, coord=['G', 'C']):
     """
@@ -134,6 +138,7 @@ def init_seeds(seed, nmc, verbose=False):
         print 'seed U', seed_list_U
     return seed_list_I, seed_list_Q, seed_list_U
 
+@benchmark
 def load_hdf5_data(fn, nside_out):
     """
     Load hdf5 file
@@ -369,19 +374,3 @@ class normalise_instrument_parser(normalise_parser):
         for freq in self.frequencies:
             val, key = freq.split('_')
             self.tubes_to_freq[key].append(int(val))
-
-def benchmark(func):
-    """
-    Print the seconds that a function takes to execute.
-    """
-    if DEBUG is True:
-        def wrapper(*args, **kwargs):
-            t0 = time()
-            res = func(*args, **kwargs)
-            print("function @{0} took {1:0.3f} seconds".format(
-                func.__name__, time() - t0))
-            return res
-    else:
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-    return wrapper
