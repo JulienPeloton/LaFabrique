@@ -20,6 +20,7 @@ This package contains scripts for generating simulated CMB datasets (current and
 ### Before starting
 This code has the following dependencies:
 * numpy, pylab, etc (required)
+* healpy
 * h5py
 * PySM (see https://github.com/bthorne93/PySM_public)
 
