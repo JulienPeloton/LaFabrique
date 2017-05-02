@@ -5,7 +5,6 @@ import pylab as pl
 import os
 from util_CMB import benchmark
 
-@benchmark
 def modify_input(m1, out):
     """
     Modify the input observations to match the desired output noise level.
@@ -219,7 +218,7 @@ def prepare_map(map1, sigma_t_theo):
 
 def compute_noiselevel(m1, pixel_size, center=[0, 0], plot=True):
     '''
-    Dump routine to check the noise level in the sense of Knox formula.
+    Dumb routine to check the noise level in the sense of Knox formula.
     Noise in time domain -> noise in map level
 
     Parameters
