@@ -85,11 +85,11 @@ if __name__ == '__main__':
             m1_output, instrument)
 
         ## Generate covariances
-        covariances.generate_covariances(m1_output, instrument, sigma_p_theo)
+        covariances.generate_covariances(m1_output, instrument)
 
         ## Generate noise simulations
         noise.generate_noise_sims(
-            m1_output, instrument, sigma_p_theo, center=center)
+            m1_output, instrument, center=center)
 
     ## Generate foregrounds
     if args.setup_foregrounds is not None:

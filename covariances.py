@@ -47,7 +47,7 @@ def qu_weight_mineig(cc, cs, ss, epsilon=0., verbose=False):
 
     return weight
 
-def generate_covariances(m1, out, sigma_p_theo):
+def generate_covariances(m1, out):
     """
     Create a weight map using the smaller eigenvalue of the polarization matrix
     The resulting covariances are saved on the disk.
@@ -56,7 +56,6 @@ def generate_covariances(m1, out, sigma_p_theo):
     ----------
     * m1: object, contain the observations
     * out: object, contain the input parameters from the ini file
-    * sigma_p_theo: float, level of noise in map domain [uk.arcmin]
 
     """
     nside = m1.mapinfo.nside
@@ -76,4 +75,5 @@ def generate_covariances(m1, out, sigma_p_theo):
         column_units=['uK2_CMB', 'uK2_CMB', 'uK2_CMB'],
         partial=False,
         extra_header=[
-            ('name', 'SO weight maps'), ('sigma_p [uK.arcmin]', sigma_p_theo)])
+            ('name', 'SO weight maps'),
+            ('sigma_p [uK.arcmin]', m1.sigma_p)])
