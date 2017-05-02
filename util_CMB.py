@@ -50,6 +50,28 @@ def benchmark(func):
             return func(*args, **kwargs)
     return wrapper
 
+def file_path(o, j):
+    comps = str()
+    for k in sorted(o.components):
+        comps = ''.join([comps, k[0:5], '_'])
+    fname = ''.join([
+        o.output_prefix,
+        comps,
+        str(o.output_frequency[j]).replace('.', 'p'),
+        '_',
+        str(o.nside),
+        '.fits'])
+    path = os.path.join(o.output_dir, fname)
+    return path
+
+
+def write_output_single(sky_freq, o, Config, i, extra_header):
+    path = file_path(o, i)
+    hp.write_map(
+        path, hp.ud_grade(sky_freq, nside_out=o.nside),
+        coord=o.output_coordinate_system,
+        column_units=''.join(o.output_units),
+        column_names=None, extra_header=extra_header)
 
 def rot_planck_map(data, header=None, coord=['G', 'C']):
     """
@@ -69,8 +91,15 @@ def rot_planck_map(data, header=None, coord=['G', 'C']):
     """
     print 'Rotate coordinate from %s to %s' % (coord[0], coord[1])
 
+    nmap = data.shape[0]
+    ndim = data.ndim
+
     #### List of input pixels
-    nside = hp.npix2nside(len(data))
+    if ndim > 1:
+        nside = hp.npix2nside(len(data[0]))
+    else:
+        nside = hp.npix2nside(len(data))
+
     obspix_pb = range(12 * nside**2)
 
     ### Rotation operator
@@ -86,9 +115,6 @@ def rot_planck_map(data, header=None, coord=['G', 'C']):
     obspix_pk = hp.ang2pix(nside, theta_pk, phi_pk)
 
     ### Fill the map with new locations
-    nmap = data.shape[0]
-    ndim = data.ndim
-
     if ndim > 1:
         for i in range(nmap):
             data[i][obspix_pb] = data[i][obspix_pk]
@@ -301,8 +327,8 @@ class normalise_foreground_parser(normalise_parser):
             config_dict['fwhm'],
             self.floatise_it)
 
-        self.output_units = np.array(
-            [config_dict['output_units'][0],
+        self.output_units = np.array([
+            config_dict['output_units'][0],
             config_dict['output_units'][1:]])
 
         if config_dict['instrument_noise_seed'] == 'None':
