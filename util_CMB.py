@@ -221,7 +221,7 @@ def load_center(patch):
         center = None
     return center
 
-def partial2full(partial, obspix, nside):
+def partial2full(partial, obspix, nside, fill_with_nan=True):
     """
     Convert partial map into full sky map
 
@@ -230,13 +230,18 @@ def partial2full(partial, obspix, nside):
         * partial: 1D array, the observed data
         * obspix: 1D array, the label of observed pixels
         * nside: int, nside of the partial data
+        * fill_with_nan: boolean, if True it fills with nan unobserved
+            pixels (it allows compression when saving on the disk)
 
     Output
     ----------
         * full: 1D array, full sky map
 
     """
-    full = np.zeros(12 * nside**2)
+    if fill_with_nan is True:
+        full = np.zeros(12 * nside**2) * np.nan
+    else:
+        full = np.zeros(12 * nside**2)
     full[obspix] = partial
     return full
 

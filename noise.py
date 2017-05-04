@@ -116,7 +116,7 @@ def generate_noise_sims(m1, out, center=[0, 0]):
             coord='C',
             column_names=['I_STOKES', 'Q_STOKES', 'U_STOKES'],
             column_units=['uK_CMB', 'uK_CMB', 'uK_CMB'],
-            partial=False,
+            partial=True,
             extra_header=[
                 ('name', 'SO noise maps'),
                 ('sigma_p [uK.arcmin]', m1.sigma_p)])
