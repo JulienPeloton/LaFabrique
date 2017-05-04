@@ -4,6 +4,7 @@ import util_CMB
 import pylab as pl
 import os
 from util_CMB import benchmark
+from scipy import weave
 
 def modify_input(m1, out):
     """
@@ -172,7 +173,7 @@ def compute_weights_fullmap(map1, masktot):
     a10 = 1. / det * (-map1.cs[masktot])
     a11 = 1. / det * (map1.cc[masktot])
 
-    def unsafe_cholesky_C(mat,lapack='<mkl_lapack.h>'):
+    def unsafe_cholesky_C(mat,lapack='"mkl_lapack.h"'):
         """
         Unsafe in the sense we are not checking the positive-definitiveness
         of the matrix. But much faster than the python one.
