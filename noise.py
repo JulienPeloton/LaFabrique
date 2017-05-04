@@ -62,7 +62,7 @@ def generate_noise_sims(m1, out, center=[0, 0]):
 
     masktot = (m1.w > 0) * (m1.cc > 0.0) * (m1.ss > 0.0)
 
-    cc, ss, cs = compute_weights_fullmap(m1, masktot)
+    cc, ss, cs = compute_weights_fullmap(m1, out, masktot)
 
     noise_per_pixel_I = np.sqrt(1.0 / (m1.w[masktot])) * 1e6
     noise_per_pixel_Q = cc * 1e6
@@ -144,7 +144,7 @@ def generate_noise_sims(m1, out, center=[0, 0]):
         pl.show()
 
 @benchmark
-def compute_weights_fullmap(map1, masktot):
+def compute_weights_fullmap(map1, out, masktot):
     """
     Perform Cholesky decomposition of the covariance matrice
 
@@ -161,9 +161,6 @@ def compute_weights_fullmap(map1, masktot):
 
     """
     npix = len(map1.mapinfo.obspix[masktot])
-    cct = np.zeros(npix)
-    sst = np.zeros(npix)
-    cst = np.zeros(npix)
 
     ## Inversion per block
     det = map1.cc[masktot] * map1.ss[masktot] - map1.cs[masktot]**2
@@ -173,27 +170,54 @@ def compute_weights_fullmap(map1, masktot):
     a10 = 1. / det * (-map1.cs[masktot])
     a11 = 1. / det * (map1.cc[masktot])
 
-    def unsafe_cholesky_C(mat,lapack='"mkl_lapack.h"'):
+    def eigenvalue_approximation(mat):
+        """
+        Approximation in the sense we are neglecting QU correlations inside a
+        pixel. But much faster than any other methods.
+
+        Parameters
+        ----------
+            * mat: 2x2 array, the inverse covariance matrix for a sky pixel
+                (2x2 polarisation block).
+
+        Output
+        ----------
+            * mat: 2x2 array, inverse coupling matrix.
+        """
+        # trace = np.sum(np.diag(mat))
+        # det = np.linalg.det(mat)
+        #
+        # eigenvalue_min = trace * (1. - np.sqrt(1. - 4.*det)) / 2.
+        # e = np.sqrt(eigenvalue_min)
+        e = np.sqrt(mat[0][0])
+
+        return np.array( [[e, 0.], [0., e]] )
+
+
+    def unsafe_cholesky_C(mat, lapack='"mkl_lapack.h"'):
         """
         Unsafe in the sense we are not checking the positive-definitiveness
         of the matrix. But much faster than the python one.
 
         Parameters
         ----------
-            * mat: 2x2 array, the matrix to invert
+            * mat: 2x2 array, the inverse covariance matrix for a sky pixel
+                (2x2 polarisation block). Must be positive-definite.
 
         Output
         ----------
-            * mat: 2x2 array, the lower triangle (/!\ 01 block is not used)
+            * mat: 2x2 array, the cholesky factor
+                (lower triangle, /!\ 01 block is not used)
         """
         ## TODO check that the matrix is positive-definite before!
         c_code = r"""
             int INFO=1;
             char U='U';
             int N = 2;
-            DPOTRF( &U, &N, mat, &N, &INFO );
+            // DPOTRF( &U, &N, mat, &N, &INFO );
+            dpotrf_( &U, &N, mat, &N, &INFO );
             """
-        weave.inline(c_code, ['mat'],headers=[lapack])
+        weave.inline(c_code, ['mat'], headers=[lapack])
         return mat
 
     def safe_cholesky_python(mat):
@@ -203,21 +227,15 @@ def compute_weights_fullmap(map1, masktot):
 
         Parameters
         ----------
-            * mat: 2x2 array, the matrix to invert
+            * mat: 2x2 array, the inverse covariance matrix for a sky pixel
+                (2x2 polarisation block). Must be positive-definite.
 
         Output
         ----------
-            * mat: 2x2 array, the lower triangle
+            * mat: 2x2 array, the cholesky factor (lower triangle)
         """
-        ## TODO check that the matrix is positive-definite before!
-        c_code = r"""
-            int INFO=1;
-            char U='U';
-            int N = 2;
-            DPOTRF( &U, &N, mat, &N, &INFO );
-            """
         try:
-            cho = np.linalg.cholesky(mat).T
+            cho = np.linalg.cholesky(mat)
         except:
             cho = np.zeros_like(mat)
         return cho
@@ -226,27 +244,17 @@ def compute_weights_fullmap(map1, masktot):
     mat_full = [
         np.array(
             [[a00[i], a01[i]], [a10[i], a11[i]]]) for i in range(npix)]
-    try:
-        cho_full = np.array([unsafe_cholesky_C(mat) for mat in mat_full])
-    except:
-        print 'LAPACK not found - switching to numpy (latency expected...)'
-        cho_full = np.array([safe_cholesky_python(mat) for mat in mat_full])
 
-    # for i in range(npix):
-    #     try:
-    #         mat = np.array([[a00[i], a01[i]], [a10[i], a11[i]]])
-    #
-    #         ## Take the upper-triangular
-    #         cho = np.linalg.cholesky(mat).T
-    #
-    #         cct[i] = cho[0][0]
-    #         sst[i] = cho[1][1]
-    #         cst[i] = cho[0][1]
-    #     except:
-    #         print 'Pixel ill-conditionned', mat, det[i]
-    #         print 'Rejected'
+    if out.inversion_method == 2:
+        coupling = np.array(
+            [unsafe_cholesky_C(mat, out.lapack) for mat in mat_full])
+    elif out.inversion_method == 1:
+        coupling = np.array([safe_cholesky_python(mat) for mat in mat_full])
+    elif out.inversion_method == 0:
+        coupling = np.array(
+            [eigenvalue_approximation(mat) for mat in mat_full])
 
-    return cho_full[:,0,0], cho_full[:,1,1], cho_full[:,1,0]
+    return coupling[:,0,0], coupling[:,1,1], coupling[:,1,0]
 
 def prepare_map(map1, sigma_t_theo):
     """
@@ -259,22 +267,22 @@ def prepare_map(map1, sigma_t_theo):
         * sigma_t_theo: float, level of noise in time-domain [uK.sqrt(s)]
 
     """
-    ## Build AN-1A = AA/sigma2_t
     sigma_t_theo /= 1e6  ## muk to K
 
     ## Temperature
     w = map1.nhit / (sigma_t_theo / np.sqrt(2))**2
 
     ## Polarisation
-    cc = map1.nhit / sigma_t_theo**2
+    boost = map1.nhit / map1.w / sigma_t_theo**2
+    cc = map1.cc * boost
+    ss = map1.ss * boost
+    cs = map1.cs * boost
 
     ## Update the hdf5 field
     map1.w = w
     map1.cc = cc
-    map1.ss = cc
-
-    ## Assume no Q/U correlation for the moment
-    map1.cs = np.zeros_like(cc)
+    map1.ss = ss
+    map1.cs = cs
 
 def compute_noiselevel(m1, pixel_size, center=[0, 0], plot=True):
     '''

@@ -360,6 +360,7 @@ class normalise_instrument_parser(normalise_parser):
         self.name = config_dict['name']
         self.outpath_noise = config_dict['outpath_noise']
         self.outpath_masks = config_dict['outpath_masks']
+        self.lapack = config_dict['lapack']
 
         ## Booleans
         self.plot = self.boolise_it(config_dict, 'plot')
@@ -381,6 +382,7 @@ class normalise_instrument_parser(normalise_parser):
         self.nside_out = self.intise_it(config_dict['nside_out'])
         self.initial_seed = self.intise_it(config_dict['initial_seed'])
         self.nmc = self.intise_it(config_dict['nmc'])
+        self.inversion_method = self.intise_it(config_dict['inversion_method'])
 
         ## Arrays
         self.frequencies = self.normalise_array(
