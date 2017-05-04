@@ -59,14 +59,11 @@ def generate_noise_sims(m1, out, center=[0, 0]):
             center=center,
             plot=out.plot)
 
-    masktotI = np.where(m1.w > 0)[0]
-    mask1 = m1.cc > 0.0
-    mask2 = m1.ss > 0.0
-    masktot = mask1 * mask2
+    masktot = (m1.w > 0) * (m1.cc > 0.0) * (m1.ss > 0.0)
 
     cc, ss, cs = compute_weights_fullmap(m1, masktot)
 
-    noise_per_pixel_I = np.sqrt(1.0 / (m1.w[masktotI])) * 1e6
+    noise_per_pixel_I = np.sqrt(1.0 / (m1.w[masktot])) * 1e6
     noise_per_pixel_Q = cc * 1e6
     noise_per_pixel_U = ss * 1e6
     noise_per_pixel_QU = cs * 1e6
@@ -87,11 +84,15 @@ def generate_noise_sims(m1, out, center=[0, 0]):
             print 'seed I, Q, U', seed_list_I[i], \
                 seed_list_Q[i], seed_list_U[i]
 
-        err_pixel_I = state_I_MC.normal(0, np.ones(npix_I)) * noise_per_pixel_I
+        # err_pixel_I = state_I_MC.normal(0, np.ones(npix_I)) * noise_per_pixel_I
+        err_pixel_I = state_I_MC.normal(0, 1, npix_I) * noise_per_pixel_I
 
+        # pol_array = [
+        #     state_Q_MC.normal(0, np.ones(npix_P)),
+        #     state_U_MC.normal(0, np.ones(npix_P))]
         pol_array = [
-            state_Q_MC.normal(0, np.ones(npix_P)),
-            state_U_MC.normal(0, np.ones(npix_P))]
+            state_Q_MC.normal(0, 1, npix_P),
+            state_U_MC.normal(0, 1, npix_P)]
         err_pixel_Q = pol_array[0] * noise_per_pixel_Q + \
             pol_array[1] * noise_per_pixel_QU
         err_pixel_U = pol_array[1] * noise_per_pixel_U
@@ -171,22 +172,80 @@ def compute_weights_fullmap(map1, masktot):
     a10 = 1. / det * (-map1.cs[masktot])
     a11 = 1. / det * (map1.cc[masktot])
 
-    ## Cholesky decomposition of each blocks
-    for i in range(npix):
+    def unsafe_cholesky_C(mat,lapack='<mkl_lapack.h>'):
+        """
+        Unsafe in the sense we are not checking the positive-definitiveness
+        of the matrix. But much faster than the python one.
+
+        Parameters
+        ----------
+            * mat: 2x2 array, the matrix to invert
+
+        Output
+        ----------
+            * mat: 2x2 array, the lower triangle (/!\ 01 block is not used)
+        """
+        ## TODO check that the matrix is positive-definite before!
+        c_code = r"""
+            int INFO=1;
+            char U='U';
+            int N = 2;
+            DPOTRF( &U, &N, mat, &N, &INFO );
+            """
+        weave.inline(c_code, ['mat'],headers=[lapack])
+        return mat
+
+    def safe_cholesky_python(mat):
+        """
+        Safe in the sense we are not checking the positive-definitiveness
+        of the matrix. But much slower than the C one.
+
+        Parameters
+        ----------
+            * mat: 2x2 array, the matrix to invert
+
+        Output
+        ----------
+            * mat: 2x2 array, the lower triangle
+        """
+        ## TODO check that the matrix is positive-definite before!
+        c_code = r"""
+            int INFO=1;
+            char U='U';
+            int N = 2;
+            DPOTRF( &U, &N, mat, &N, &INFO );
+            """
         try:
-            mat = np.array([[a00[i], a01[i]], [a10[i], a11[i]]])
-
-            ## Take the upper-triangular
-            cho=np.linalg.cholesky(mat).T
-
-            cct[i] = cho[0][0]
-            sst[i] = cho[1][1]
-            cst[i] = cho[0][1]
+            cho = np.linalg.cholesky(mat).T
         except:
-            print 'Pixel ill-conditionned', mat, det[i]
-            print 'Rejected'
+            cho = np.zeros_like(mat)
+        return cho
 
-    return cct, sst, cst
+    ## Cholesky decomposition of each blocks
+    mat_full = [
+        np.array(
+            [[a00[i], a01[i]], [a10[i], a11[i]]]) for i in range(npix)]
+    try:
+        cho_full = np.array([unsafe_cholesky_C(mat) for mat in mat_full])
+    except:
+        print 'LAPACK not found - switching to numpy (latency expected...)'
+        cho_full = np.array([safe_cholesky_python(mat) for mat in mat_full])
+
+    # for i in range(npix):
+    #     try:
+    #         mat = np.array([[a00[i], a01[i]], [a10[i], a11[i]]])
+    #
+    #         ## Take the upper-triangular
+    #         cho = np.linalg.cholesky(mat).T
+    #
+    #         cct[i] = cho[0][0]
+    #         sst[i] = cho[1][1]
+    #         cst[i] = cho[0][1]
+    #     except:
+    #         print 'Pixel ill-conditionned', mat, det[i]
+    #         print 'Rejected'
+
+    return cho_full[:,0,0], cho_full[:,1,1], cho_full[:,1,0]
 
 def prepare_map(map1, sigma_t_theo):
     """
