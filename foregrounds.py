@@ -76,7 +76,7 @@ def generate_foregrounds(config_file):
     sky = np.swapaxes(sky, 0, 1)
     for i in xrange(len(out.output_frequency)):
         if out.output_coordinate_system:
-            sky[i, ...] = util_CMB.rot_planck_map(
+            sky[i, ...] = util_CMB.rot_sky_map(
                 sky[i, ...],
                 coord=['G', out.output_coordinate_system])
         extra_header = config2list(Config, out, i)

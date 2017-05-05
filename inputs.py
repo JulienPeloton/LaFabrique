@@ -69,7 +69,7 @@ class InputScan():
     def change_resolution(m_in, nside_out):
         print 'Changing the resolution of the map from %d to %d' % \
             (m_in.mapinfo.nside, nside_out)
-        tmp = hp.ud_grade(
+        tmp = util_CMB.ud_grade(
             util_CMB.partial2full(
                 m_in.nhit,
                 m_in.mapinfo.obspix,
@@ -77,7 +77,7 @@ class InputScan():
         obspix = np.where(tmp > 0)[0]
 
         def replace(field, obspix_in, obspix_out, nside_in, nside_out):
-            tmp = hp.ud_grade(
+            tmp = util_CMB.ud_grade(
                 util_CMB.partial2full(field, obspix_in, nside_in), nside_out)
             return tmp[obspix_out]
 
