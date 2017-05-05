@@ -34,11 +34,12 @@ export PYTHONPATH=$PYTHONPATH:$LaFabriquePATH
 
 ### Usage
 You can find ini files to have a quick usage.
-Here the breakdown of the code for 1 noise simulation for 8 frequency channels
-at a resolution of nside = 2048, and few percent of the sky. Notice that the longest
-step is the Cholesky factorisation which is done only once for all MC simulations then.
+Here the breakdown of the code for 100 noise simulation for 8 frequency channels on 48 processors
+at a resolution of nside = 2048, and few percent of the sky. Notice that the
+Cholesky factorisation  is done only once per processor for each frequency band and
+for all MC simulations (corresponds to 48[proc] * 8[freq] = 384 calls below).
 
-![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/perf_1MC_nside2048.png)
+![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/perf_100MC_nside2048.png)
 
 ### License
 GNU License (see the LICENSE file for details) covers all files
