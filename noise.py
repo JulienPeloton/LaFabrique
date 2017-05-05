@@ -1,10 +1,7 @@
 import numpy as np
 import healpy as hp
 import util_CMB
-import pylab as pl
 import os
-from util_CMB import benchmark
-from scipy import weave
 
 def modify_input(m1, out):
     """
@@ -39,8 +36,7 @@ def modify_input(m1, out):
 
     return m1, sigma_t_theo, sigma_p_theo
 
-@benchmark
-def generate_noise_sims(m1, out, center=[0, 0]):
+def generate_noise_sims(m1, out, center=[0, 0], comm=None):
     """
     Noise simulations based on the covariance matrix.
     Noise is white but inhomogeneous (specified by nhit pattern in m1).
@@ -50,19 +46,28 @@ def generate_noise_sims(m1, out, center=[0, 0]):
         * m1: object, contain the observations
         * out: object, contain the input parameters from the ini file
         * center: list of float, center coordinates of the patch. Optional.
+        * comm: object, communicator for parallel computing.
 
     """
 
-    if out.verbose is True:
+    if comm is None:
+        comm = lambda: -1
+        comm.barrier = lambda: -1
+        comm.rank = 0
+        comm.size = 1
+
+    if out.verbose is True and comm.rank == 0:
         compute_noiselevel(
             m1=m1,
             pixel_size=hp.nside2resol(m1.mapinfo.nside) * 180. / np.pi * 60,
             center=center,
             plot=out.plot)
 
+    comm.barrier()
+
     masktot = (m1.w > 0) * (m1.cc > 0.0) * (m1.ss > 0.0)
 
-    cc, ss, cs = compute_weights_fullmap(m1, out, masktot)
+    cc, ss, cs = util_CMB.compute_weights_fullmap(m1, out, masktot)
 
     noise_per_pixel_I = np.sqrt(1.0 / (m1.w[masktot])) * 1e6
     noise_per_pixel_Q = cc * 1e6
@@ -72,18 +77,23 @@ def generate_noise_sims(m1, out, center=[0, 0]):
     seed_list_I, seed_list_Q, seed_list_U = util_CMB.init_seeds(
         out.seed_noise, nmc=out.nmc, verbose=out.verbose)
 
+    if out.verbose is True and comm.rank == 0:
+        print 'Full list of seed for I', seed_list_I
+        print 'Full list of seed for Q', seed_list_Q
+        print 'Full list of seed for U', seed_list_U
+
     npix_I = len(noise_per_pixel_I)
     npix_P = len(noise_per_pixel_Q)
 
-    for i in range(int(out.nmc)):
+    for i in range(comm.rank,out.nmc,comm.size):
         state_I_MC = np.random.RandomState(seed_list_I[i])
         state_Q_MC = np.random.RandomState(seed_list_Q[i])
         state_U_MC = np.random.RandomState(seed_list_U[i])
 
         if out.verbose is True:
-            print 'MC #', i
-            print 'seed I, Q, U', seed_list_I[i], \
-                seed_list_Q[i], seed_list_U[i]
+            print 'proc [%d/%d] doing MC #' % (comm.rank, comm.size), i
+            print 'proc [%d/%d] having seeds (IQU)' % (comm.rank, comm.size), \
+             seed_list_I[i], seed_list_Q[i], seed_list_U[i]
 
         err_pixel_I = state_I_MC.normal(0, 1, npix_I) * noise_per_pixel_I
 
@@ -107,19 +117,21 @@ def generate_noise_sims(m1, out, center=[0, 0]):
             out.outpath_noise,
             'IQU_nside%d_%s_freq%s_white_noise_sim%03d.fits' % (
                 m1.mapinfo.nside, out.name, out.frequency, i))
-        hp.write_map(
-            path,
-            [Inoise_sim, Qnoise_sim, Unoise_sim],
-            fits_IDL=False,
-            coord='C',
-            column_names=['I_STOKES', 'Q_STOKES', 'U_STOKES'],
-            column_units=['uK_CMB', 'uK_CMB', 'uK_CMB'],
-            partial=True,
-            extra_header=[
-                ('name', 'SO noise maps'),
-                ('sigma_p [uK.arcmin]', m1.sigma_p)])
+
+        util_CMB.write_map(
+                path,
+                [Inoise_sim, Qnoise_sim, Unoise_sim],
+                fits_IDL=False,
+                coord='C',
+                column_names=['I_STOKES', 'Q_STOKES', 'U_STOKES'],
+                column_units=['uK_CMB', 'uK_CMB', 'uK_CMB'],
+                partial=True,
+                extra_header=[
+                    ('name', 'SO noise maps'),
+                    ('sigma_p [uK.arcmin]', m1.sigma_p)])
 
     if out.plot is True:
+        import pylab as pl
         min_ = -20
         max_ = 20
         Inoise_sim[Inoise_sim == 0] = np.nan
@@ -138,119 +150,6 @@ def generate_noise_sims(m1, out, center=[0, 0]):
             min=min_, max=max_, title='', notext=True,
             unit='$\mu K$', cmap=pl.cm.jet)
         pl.show()
-
-@benchmark
-def compute_weights_fullmap(map1, out, masktot):
-    """
-    Perform Cholesky decomposition of the covariance matrice
-
-    Parameters
-    ----------
-        * map1: hdf5 file, contain the observations
-        * masktot: list of boolean, observed pixels
-
-    Outputs
-    ----------
-        * cct: 1D array, QQ part of the inverse covariance matrix
-        * sst: 1D array, UU part of the inverse covariance matrix
-        * cst: 1D array, QU part of the inverse covariance matrix
-
-    """
-    npix = len(map1.mapinfo.obspix[masktot])
-
-    ## Inversion per block
-    det = map1.cc[masktot] * map1.ss[masktot] - map1.cs[masktot]**2
-
-    a00 = 1. / det * (map1.ss[masktot])
-    a01 = 1. / det * (-map1.cs[masktot])
-    a10 = 1. / det * (-map1.cs[masktot])
-    a11 = 1. / det * (map1.cc[masktot])
-
-    def eigenvalue_approximation(mat):
-        """
-        Approximation in the sense we are neglecting QU correlations inside a
-        pixel. But much faster than any other methods.
-
-        Parameters
-        ----------
-            * mat: 2x2 array, the inverse covariance matrix for a sky pixel
-                (2x2 polarisation block).
-
-        Output
-        ----------
-            * mat: 2x2 array, inverse coupling matrix.
-        """
-        # trace = np.sum(np.diag(mat))
-        # det = np.linalg.det(mat)
-        #
-        # eigenvalue_min = trace * (1. - np.sqrt(1. - 4.*det)) / 2.
-        # e = np.sqrt(eigenvalue_min)
-        e = np.sqrt(mat[0][0])
-
-        return np.array( [[e, 0.], [0., e]] )
-
-
-    def unsafe_cholesky_C(mat, lapack='"mkl_lapack.h"'):
-        """
-        Unsafe in the sense we are not checking the positive-definitiveness
-        of the matrix. But much faster than the python one.
-
-        Parameters
-        ----------
-            * mat: 2x2 array, the inverse covariance matrix for a sky pixel
-                (2x2 polarisation block). Must be positive-definite.
-
-        Output
-        ----------
-            * mat: 2x2 array, the cholesky factor
-                (lower triangle, /!\ 01 block is not used)
-        """
-        ## TODO check that the matrix is positive-definite before!
-        c_code = r"""
-            int INFO=1;
-            char U='U';
-            int N = 2;
-            // DPOTRF( &U, &N, mat, &N, &INFO );
-            dpotrf_( &U, &N, mat, &N, &INFO );
-            """
-        weave.inline(c_code, ['mat'], headers=[lapack])
-        return mat
-
-    def safe_cholesky_python(mat):
-        """
-        Safe in the sense we are not checking the positive-definitiveness
-        of the matrix. But much slower than the C one.
-
-        Parameters
-        ----------
-            * mat: 2x2 array, the inverse covariance matrix for a sky pixel
-                (2x2 polarisation block). Must be positive-definite.
-
-        Output
-        ----------
-            * mat: 2x2 array, the cholesky factor (lower triangle)
-        """
-        try:
-            cho = np.linalg.cholesky(mat)
-        except:
-            cho = np.zeros_like(mat)
-        return cho
-
-    ## Cholesky decomposition of each blocks
-    mat_full = [
-        np.array(
-            [[a00[i], a01[i]], [a10[i], a11[i]]]) for i in range(npix)]
-
-    if out.inversion_method == 2:
-        coupling = np.array(
-            [unsafe_cholesky_C(mat, out.lapack) for mat in mat_full])
-    elif out.inversion_method == 1:
-        coupling = np.array([safe_cholesky_python(mat) for mat in mat_full])
-    elif out.inversion_method == 0:
-        coupling = np.array(
-            [eigenvalue_approximation(mat) for mat in mat_full])
-
-    return coupling[:,0,0], coupling[:,1,1], coupling[:,1,0]
 
 def prepare_map(map1, sigma_t_theo):
     """
@@ -318,6 +217,7 @@ def compute_noiselevel(m1, pixel_size, center=[0, 0], plot=True):
     print 'sigma_p = ', np.sqrt(sigma_p2), 'muK.arcmin (inhomogeneous)'
 
     if plot is 'True':
+        import pylab as pl
         ## Build N ~ sqrt(AA/AN-1A)
         map_ = np.zeros(12*m1.mapinfo.nside**2)
         map_[m1.mapinfo.obspix[mask_nhit]] = np.sqrt(
