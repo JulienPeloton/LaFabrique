@@ -85,12 +85,8 @@ def generate_noise_sims(m1, out, center=[0, 0]):
             print 'seed I, Q, U', seed_list_I[i], \
                 seed_list_Q[i], seed_list_U[i]
 
-        # err_pixel_I = state_I_MC.normal(0, np.ones(npix_I)) * noise_per_pixel_I
         err_pixel_I = state_I_MC.normal(0, 1, npix_I) * noise_per_pixel_I
 
-        # pol_array = [
-        #     state_Q_MC.normal(0, np.ones(npix_P)),
-        #     state_U_MC.normal(0, np.ones(npix_P))]
         pol_array = [
             state_Q_MC.normal(0, 1, npix_P),
             state_U_MC.normal(0, 1, npix_P)]
@@ -260,6 +256,8 @@ def prepare_map(map1, sigma_t_theo):
     """
     Given a nhit pattern and level of noise,
     construct a simple covariance map (AN^{-1}A)
+    New noise level in temperature is given by sigma_t_theo,
+    and that in polarisation by sigma_t_theo * sqrt(2).
 
     Parameters
     ----------
@@ -270,10 +268,10 @@ def prepare_map(map1, sigma_t_theo):
     sigma_t_theo /= 1e6  ## muk to K
 
     ## Temperature
-    w = map1.nhit / (sigma_t_theo / np.sqrt(2))**2
+    w = map1.nhit / (sigma_t_theo)**2
 
     ## Polarisation
-    boost = map1.nhit / map1.w / sigma_t_theo**2
+    boost = map1.nhit / map1.w / (sigma_t_theo * np.sqrt(2))**2
     cc = map1.cc * boost
     ss = map1.ss * boost
     cs = map1.cs * boost
@@ -304,12 +302,13 @@ def compute_noiselevel(m1, pixel_size, center=[0, 0], plot=True):
 
     ## find the average noise in time domain : sigma^2_t = <N>_p
     sigma_t = np.sqrt(
-        np.mean(m1.nhit[mask_nhit] / m1.cc[mask_nhit])) * 1e6 ## in muK
+        np.mean(m1.nhit[mask_nhit] / m1.w[mask_nhit])) * 1e6 ## in muK
     print 'sigma_t = ', sigma_t, 'muK'
 
     ## Noise per pixel, In the sense of Knox formula
     sigma_p2 = 4 * np.pi * \
-        sigma_t**2 / npix * (npix / hp.nside2npix(m1.mapinfo.nside))
+        sigma_t**2 / float(npix) * \
+         (float(npix) / hp.nside2npix(m1.mapinfo.nside))
     print 'sigma_p = ', np.sqrt(sigma_p2), 'muK.arcmin (homogeneous)'
 
     sigma_p2 = 4 * np.pi * \
@@ -358,6 +357,8 @@ def theoretical_noise_level_time_domain(
     freq_in=15., freq_out=30., tube_factor=1, verbose=False):
     '''
     Given some instrument configuration, compute the noise level in time-domain
+    This noise level corresponds to noise for temperature. Noise level in
+    polarisation is sqrt(2) higher.
 
     Parameters
     ----------
