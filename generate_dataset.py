@@ -43,12 +43,13 @@ def grabargs(args_param=None):
         print '################################'
 
     ## Create folders if necessary
-    if not os.path.exists(out_instrument.name):
-        os.makedirs(out_instrument.name)
-    if not os.path.exists(out_instrument.outpath_noise):
-        os.makedirs(out_instrument.outpath_noise)
-    if not os.path.exists(out_instrument.outpath_masks):
-        os.makedirs(out_instrument.outpath_masks)
+    if comm.rank == 0:
+        if not os.path.exists(out_instrument.name):
+            os.makedirs(out_instrument.name)
+        if not os.path.exists(out_instrument.outpath_noise):
+            os.makedirs(out_instrument.outpath_noise)
+        if not os.path.exists(out_instrument.outpath_masks):
+            os.makedirs(out_instrument.outpath_masks)
 
     ## Save ini file for later comparison
     if comm.rank == 0:
