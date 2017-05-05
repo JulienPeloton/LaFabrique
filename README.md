@@ -33,6 +33,11 @@ export PYTHONPATH=$PYTHONPATH:$LaFabriquePATH
 
 ### Usage
 You can find ini files to have a quick usage.
+Here the breakdown of the code for 1 noise simulation for 8 frequency channels
+at a resolution of nside = 2048, and few percent of the sky. Notice that the longest
+step is the Cholesky factorisation which is done only once for all MC simulations then.
+
+![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/perf_1MC_nside2048.png)
 
 ### License
 GNU License (see the LICENSE file for details) covers all files
