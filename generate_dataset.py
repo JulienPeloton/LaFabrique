@@ -1,8 +1,3 @@
-import healpy as hp
-import numpy as np
-import pylab as pl
-
-import sys
 import os
 import copy
 import argparse
@@ -12,6 +7,7 @@ import covariances
 import noise
 import foregrounds
 import util_CMB
+import communications as comm
 
 def addargs(parser):
     ''' Parse command line arguments '''
@@ -36,7 +32,7 @@ def grabargs(args_param=None):
     out_instrument = util_CMB.normalise_instrument_parser(
         Config._sections['InstrumentParameters'])
 
-    if out_instrument.verbose:
+    if out_instrument.verbose and comm.rank == 0:
         print '############ CONFIG ############'
         print 'Frequency channels (GHz) ------:', out_instrument.frequencies
         print 'Noise per array [uK.sqrt(s)] --:', out_instrument.net_per_arrays
@@ -55,9 +51,10 @@ def grabargs(args_param=None):
         os.makedirs(out_instrument.outpath_masks)
 
     ## Save ini file for later comparison
-    path = os.path.join(out_instrument.name, 'setup_instrument.ini')
-    with open(path, 'w') as configfile:
-        Config.write(configfile)
+    if comm.rank == 0:
+        path = os.path.join(out_instrument.name, 'setup_instrument.ini')
+        with open(path, 'w') as configfile:
+            Config.write(configfile)
 
     return args, out_instrument
 
@@ -67,8 +64,9 @@ if __name__ == '__main__':
 
     ## Load input observations
     ## TODO to be replaced by a call to the scan strategy module
-    m1_input = util_CMB.load_hdf5_data(
-        instrument.input_observations, instrument.nside_out)
+    m1_input = util_CMB.load_hdf5_data(instrument.input_observations)
+    m1_input = util_CMB.change_resolution(m1_input, instrument.nside_out)
+
     center = util_CMB.load_center(m1_input.mapinfo.source)
 
     for freq in instrument.frequencies:
@@ -85,12 +83,17 @@ if __name__ == '__main__':
             m1_output, instrument)
 
         ## Generate covariances
-        covariances.generate_covariances(m1_output, instrument)
+        if comm.rank == 0:
+            covariances.generate_covariances(m1_output, instrument)
+        comm.barrier()
 
         ## Generate noise simulations
         noise.generate_noise_sims(
-            m1_output, instrument, center=center)
+            m1_output, instrument, center=center, comm=comm)
+
+    comm.barrier()
 
     ## Generate foregrounds
-    if args.setup_foregrounds is not None:
+    if args.setup_foregrounds is True and comm.rank == 0:
         foregrounds.generate_foregrounds(args.setup_foregrounds)
+    comm.barrier()
