@@ -4,6 +4,7 @@ import numpy as np
 import healpy as hp
 import os
 from time import time
+from scipy import weave
 
 DEBUG = True
 
@@ -34,6 +35,99 @@ def change_coord_sys(h, coord_out='C'):
     coord_sys = np.where(np.transpose(h)[0] == 'COORDSYS')[0][0]
     h[coord_sys] = ('COORDSYS', coord_out)
 
+def file_path(o, j):
+    comps = str()
+    for k in sorted(o.components):
+        comps = ''.join([comps, k[0:5], '_'])
+    fname = ''.join([
+        o.output_prefix,
+        comps,
+        str(o.output_frequency[j]).replace('.', 'p'),
+        '_',
+        str(o.nside),
+        '.fits'])
+    path = os.path.join(o.output_dir, fname)
+    return path
+
+def write_output_single(sky_freq, o, Config, i, extra_header):
+    path = file_path(o, i)
+    hp.write_map(
+        path, hp.ud_grade(sky_freq, nside_out=o.nside),
+        coord=o.output_coordinate_system,
+        column_units=''.join(o.output_units),
+        column_names=None, extra_header=extra_header)
+
+def init_seeds(seed, nmc, verbose=False):
+    """
+    Initialise seeds for noise Monte Carlo.
+    From the initial seed, it generates 3 lists (I, Q, U)
+    of NMC random integers.
+
+    Parameters
+    ----------
+        * seed: int, the initial seed
+        * nmc: nmc, the number of Monte Carlo
+
+    Output
+    ----------
+        * seed_list_X: 1D array, list of NMC random integers.
+        * header: dic, modified header. Optional (if provided in input).
+    """
+    ## Initialize seeds
+    state_initial = np.random.RandomState(seed)
+    seed_list_IQU = state_initial.randint(1, 1e6, size=3)
+    seed_I = seed_list_IQU[0]
+    seed_Q = seed_list_IQU[1]
+    seed_U = seed_list_IQU[2]
+
+    state_I = np.random.RandomState(seed_I)
+    state_Q = np.random.RandomState(seed_Q)
+    state_U = np.random.RandomState(seed_U)
+
+    seed_list_I = state_I.randint(1, 1e6, size=nmc)
+    seed_list_Q = state_Q.randint(1, 1e6, size=nmc)
+    seed_list_U = state_U.randint(1, 1e6, size=nmc)
+
+    return seed_list_I, seed_list_Q, seed_list_U
+
+def shrink_full_hdf5(fn):
+    map_full = InputScan_full.load(fn)
+    mapinfo = map_full.mapinfo
+
+    map_light = InputScan(mapinfo)
+    map_light.w = map_full.w
+    map_light.cc = map_full.cc
+    map_light.ss = map_full.ss
+    map_light.cs = map_full.cs
+    map_light.nhit = map_full.nhit
+
+    map_light.save('additional_files/SO.hdf5')
+
+def load_center(patch):
+    """
+    Center of the observations (lon,lat)
+
+    Parameters
+    ----------
+        * patch: string, name of the patch
+
+    """
+    if patch == 'RA23':
+        center = [345.5, -32.8]
+    elif patch == 'RA12':
+        center = [178.3, -0.5]
+    elif patch == 'LST':
+        center = [70, -45]
+    elif patch == 'BICEP':
+        center = [0., -57.5]
+    elif patch == 'center':
+        center = [0, 0]
+    else:
+        center = None
+    return center
+
+## Benchmarked functions
+
 def benchmark(func):
     """
     Print the seconds that a function takes to execute.
@@ -50,30 +144,8 @@ def benchmark(func):
             return func(*args, **kwargs)
     return wrapper
 
-def file_path(o, j):
-    comps = str()
-    for k in sorted(o.components):
-        comps = ''.join([comps, k[0:5], '_'])
-    fname = ''.join([
-        o.output_prefix,
-        comps,
-        str(o.output_frequency[j]).replace('.', 'p'),
-        '_',
-        str(o.nside),
-        '.fits'])
-    path = os.path.join(o.output_dir, fname)
-    return path
-
-
-def write_output_single(sky_freq, o, Config, i, extra_header):
-    path = file_path(o, i)
-    hp.write_map(
-        path, hp.ud_grade(sky_freq, nside_out=o.nside),
-        coord=o.output_coordinate_system,
-        column_units=''.join(o.output_units),
-        column_names=None, extra_header=extra_header)
-
-def rot_planck_map(data, header=None, coord=['G', 'C']):
+@benchmark
+def rot_sky_map(data, header=None, coord=['G', 'C']):
     """
     Rotate a sky map from one coordinate system to another.
 
@@ -127,51 +199,55 @@ def rot_planck_map(data, header=None, coord=['G', 'C']):
     else:
         return data
 
-def init_seeds(seed, nmc, verbose=False):
+@benchmark
+def ud_grade(m_in, nside_out):
     """
-    Initialise seeds for noise Monte Carlo.
-    From the initial seed, it generates 3 lists (I, Q, U)
-    of NMC random integers.
-
-    Parameters
-    ----------
-        * seed: int, the initial seed
-        * nmc: nmc, the number of Monte Carlo
-
-    Output
-    ----------
-        * seed_list_X: 1D array, list of NMC random integers.
-        * header: dic, modified header. Optional (if provided in input).
+    Wrapper around healpy function
     """
-    ## Initialize seeds
-    state_initial = np.random.RandomState(seed)
-    seed_list_IQU = state_initial.randint(1, 1e6, size=3)
-    seed_I = seed_list_IQU[0]
-    seed_Q = seed_list_IQU[1]
-    seed_U = seed_list_IQU[2]
-
-    state_I = np.random.RandomState(seed_I)
-    state_Q = np.random.RandomState(seed_Q)
-    state_U = np.random.RandomState(seed_U)
-
-    seed_list_I = state_I.randint(1, 1e6, size=nmc)
-    seed_list_Q = state_Q.randint(1, 1e6, size=nmc)
-    seed_list_U = state_U.randint(1, 1e6, size=nmc)
-
-    if verbose:
-        print 'seed I', seed_list_I
-        print 'seed Q', seed_list_Q
-        print 'seed U', seed_list_U
-    return seed_list_I, seed_list_Q, seed_list_U
+    return hp.ud_grade(m_in, nside_out)
 
 @benchmark
-def load_hdf5_data(fn, nside_out):
+def write_map(
+        path, data, fits_IDL=False, coord='C',
+        column_names=[''], column_units=[''], partial=True, extra_header=[]):
+    """
+    Wrapper around heapy write_map function
+    """
+
+    hp.write_map(
+        path,
+        data,
+        fits_IDL=fits_IDL,
+        coord=coord,
+        column_names=column_names,
+        column_units=column_units,
+        partial=partial,
+        extra_header=extra_header)
+
+@benchmark
+def load_hdf5_data(fn):
     """
     Load hdf5 file
 
     Parameters
     ----------
        * fn: string, name of the file to read.
+
+    Output
+    ----------
+        * map1: object, contain the observations at resolution nside_input.
+
+    """
+    return InputScan.load(fn)
+
+@benchmark
+def change_resolution(map1, nside_out):
+    """
+    Change the resolution of the input map
+
+    Parameters
+    ----------
+       * map1: object, contain the observations
        * nside_out: int, the desired resolution for the output map.
 
     Output
@@ -179,48 +255,12 @@ def load_hdf5_data(fn, nside_out):
         * map1: object, contain the observations at resolution nside_out.
 
     """
-    map1 = InputScan.load(fn)
     if nside_out != map1.mapinfo.nside:
         map1 = InputScan.change_resolution(map1, nside_out)
         print 'NSIDE_OUT', map1.mapinfo.nside
     return map1
 
-def shrink_full_hdf5(fn):
-    map_full = InputScan_full.load(fn)
-    mapinfo = map_full.mapinfo
-
-    map_light = InputScan(mapinfo)
-    map_light.w = map_full.w
-    map_light.cc = map_full.cc
-    map_light.ss = map_full.ss
-    map_light.cs = map_full.cs
-    map_light.nhit = map_full.nhit
-
-    map_light.save('additional_files/SO.hdf5')
-
-def load_center(patch):
-    """
-    Center of the observations (lon,lat)
-
-    Parameters
-    ----------
-        * patch: string, name of the patch
-
-    """
-    if patch == 'RA23':
-        center = [345.5, -32.8]
-    elif patch == 'RA12':
-        center = [178.3, -0.5]
-    elif patch == 'LST':
-        center = [70, -45]
-    elif patch == 'BICEP':
-        center = [0., -57.5]
-    elif patch == 'center':
-        center = [0, 0]
-    else:
-        center = None
-    return center
-
+@benchmark
 def partial2full(partial, obspix, nside, fill_with_nan=True):
     """
     Convert partial map into full sky map
@@ -244,6 +284,164 @@ def partial2full(partial, obspix, nside, fill_with_nan=True):
         full = np.zeros(12 * nside**2)
     full[obspix] = partial
     return full
+
+@benchmark
+def compute_weights_fullmap(map1, out, masktot):
+    """
+    Perform Cholesky decomposition of the covariance matrice
+
+    Parameters
+    ----------
+        * map1: hdf5 file, contain the observations
+        * masktot: list of boolean, observed pixels
+
+    Outputs
+    ----------
+        * cct: 1D array, QQ part of the inverse covariance matrix
+        * sst: 1D array, UU part of the inverse covariance matrix
+        * cst: 1D array, QU part of the inverse covariance matrix
+
+    """
+    npix = len(map1.mapinfo.obspix[masktot])
+
+    ## Inversion per block
+    det = map1.cc[masktot] * map1.ss[masktot] - map1.cs[masktot]**2
+
+    a00 = 1. / det * (map1.ss[masktot])
+    a01 = 1. / det * (-map1.cs[masktot])
+    a10 = 1. / det * (-map1.cs[masktot])
+    a11 = 1. / det * (map1.cc[masktot])
+
+    def eigenvalue_approximation(mat):
+        """
+        Approximation in the sense we are neglecting QU correlations inside a
+        pixel. But much faster than any other methods.
+
+        Parameters
+        ----------
+            * mat: 2x2 array, the inverse covariance matrix for a sky pixel
+                (2x2 polarisation block).
+
+        Output
+        ----------
+            * mat: 2x2 array, inverse coupling matrix.
+        """
+        # trace = np.sum(np.diag(mat))
+        # det = np.linalg.det(mat)
+        #
+        # eigenvalue_min = trace * (1. - np.sqrt(1. - 4.*det)) / 2.
+        # e = np.sqrt(eigenvalue_min)
+        e = np.sqrt(mat[0][0])
+
+        return np.array( [[e, 0.], [0., e]] )
+
+
+    def unsafe_cholesky_C(mat, lapack='"mkl_lapack.h"'):
+        """
+        Unsafe in the sense we are not checking the positive-definitiveness
+        of the matrix. But much faster than the python one.
+
+        Parameters
+        ----------
+            * mat: 2x2 array, the inverse covariance matrix for a sky pixel
+                (2x2 polarisation block). Must be positive-definite.
+
+        Output
+        ----------
+            * mat: 2x2 array, the cholesky factor
+                (lower triangle, /!\ 01 block is not used)
+        """
+        ## TODO check that the matrix is positive-definite before!
+        c_code = r"""
+            int INFO=1;
+            char U='U';
+            int N = 2;
+            // DPOTRF( &U, &N, mat, &N, &INFO );
+            dpotrf_( &U, &N, mat, &N, &INFO );
+            """
+        weave.inline(c_code, ['mat'], headers=[lapack])
+        return mat
+
+    def safe_cholesky_python(mat):
+        """
+        Safe in the sense we are not checking the positive-definitiveness
+        of the matrix. But much slower than the C one.
+
+        Parameters
+        ----------
+            * mat: 2x2 array, the inverse covariance matrix for a sky pixel
+                (2x2 polarisation block). Must be positive-definite.
+
+        Output
+        ----------
+            * mat: 2x2 array, the cholesky factor (lower triangle)
+        """
+        try:
+            cho = np.linalg.cholesky(mat)
+        except:
+            cho = np.zeros_like(mat)
+        return cho
+
+    ## Cholesky decomposition of each blocks
+    mat_full = [
+        np.array(
+            [[a00[i], a01[i]], [a10[i], a11[i]]]) for i in range(npix)]
+
+    if out.inversion_method == 2:
+        coupling = np.array(
+            [unsafe_cholesky_C(mat, out.lapack) for mat in mat_full])
+    elif out.inversion_method == 1:
+        coupling = np.array([safe_cholesky_python(mat) for mat in mat_full])
+    elif out.inversion_method == 0:
+        coupling = np.array(
+            [eigenvalue_approximation(mat) for mat in mat_full])
+
+    return coupling[:,0,0], coupling[:,1,1], coupling[:,1,0]
+
+@benchmark
+def qu_weight_mineig(cc, cs, ss, epsilon=0., verbose=False):
+    '''
+    Create a weight map using the smaller eigenvalue of the polarization matrix
+
+    Parameters
+    ----------
+        * cc: 1D array of float, QQ noise weight
+        * cs: 1D array of float, QU noise weight
+        * ss: 1D array of float, UU noise weight
+        * epsilon: float, threshold for the determinant of the inverse weight.
+    It has to be 0 <= epsilon < 1/4. Default is 0.
+
+    Outputs
+    ----------
+    * weight: 1D array of float, vector of (inverse noise) weight per pixel
+
+    '''
+    ## Compute trace and determinant of the inverse covariance matrix
+    tr = cc + ss
+    tr2 = tr*tr
+    det = (cc * ss - cs * cs)
+
+    ## Basic maths
+    val2 = tr * tr - 4. * det
+    valid = (val2 > 0.0)
+    val = np.zeros_like(val2)
+    val[valid] = np.sqrt(val2[valid])
+
+    ## Apply criterion to reject bad pixels
+    weight = np.zeros_like(tr)
+    lambda_minus = (tr - val) / 2.
+    valid = (lambda_minus > (tr-np.sqrt(tr2 - 4. * epsilon * tr2)) / 2.)
+    valid3 = [x for x in valid if x is True]
+
+    if verbose:
+        print 'criterion is', epsilon, '< det < 1/4 (epsilon= 0. by default)'
+        print 'number of pixels kept:', len(valid3), '/', np.sum(tr > 0)
+        print 'Percentage cut: %.3f %%' % (
+                    (1. - float(len(valid3)) / np.sum(tr > 0)) * 100.)
+
+    weight[valid] = lambda_minus[valid]
+
+    return weight
 
 class normalise_parser(object):
     """
@@ -282,7 +480,6 @@ class normalise_parser(object):
     def make_dic(keys, array, func):
         values = np.array([func(i) for i in array.split()])
         return {i: j for i, j in zip(keys, values)}
-
 
 class normalise_foreground_parser(normalise_parser):
     """
