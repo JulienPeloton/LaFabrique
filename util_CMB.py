@@ -554,15 +554,10 @@ class normalise_instrument_parser(normalise_parser):
 
         ## Paths and names
         self.input_observations = config_dict['input_observations']
-        self.name = config_dict['name']
-        self.outpath_noise = config_dict['outpath_noise']
-        self.outpath_masks = config_dict['outpath_masks']
         self.lapack = config_dict['lapack']
 
         ## Booleans
-        self.plot = self.boolise_it(config_dict, 'plot')
-        self.verbose = self.boolise_it(config_dict, 'verbose')
-        self.do_foregrounds = self.boolise_it(config_dict, 'do_foregrounds')
+        self.only_covariance = self.boolise_it(config_dict, 'only_covariance')
 
         ## Floats
         self.input_sampling_freq = self.floatise_it(
@@ -604,3 +599,30 @@ class normalise_instrument_parser(normalise_parser):
         for freq in self.frequencies:
             val, key = freq.split('_')
             self.tubes_to_freq[key].append(int(val))
+
+class normalise_env_parser(normalise_parser):
+    """
+    Class to handle environment parser.
+    It converts initial dictionary into an object.
+    """
+    def __init__(self, config_dict):
+        """
+        Parameters
+        ----------
+            * config_dict: dic, dictionary coming from the ini file.
+        """
+        normalise_parser.__init__(self, config_dict)
+
+        ## Paths and names
+        self.out_name = config_dict['out_name']
+        self.outpath_noise = os.path.join(
+            self.out_name, config_dict['outpath_noise'])
+        self.outpath_masks = os.path.join(
+            self.out_name, config_dict['outpath_masks'])
+        self.outpath_foregrounds = os.path.join(
+            self.out_name, config_dict['outpath_foregrounds'])
+
+
+        ## Booleans
+        self.plot = self.boolise_it(config_dict, 'plot')
+        self.verbose = self.boolise_it(config_dict, 'verbose')
