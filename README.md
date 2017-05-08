@@ -33,7 +33,13 @@ export PYTHONPATH=$PYTHONPATH:$LaFabriquePATH
 ```
 
 ### Usage
-You can find ini files to have a quick usage.
+You can find ini files to have a quick usage:
+
+```python
+python generate_dataset.py -h
+python generate_dataset.py -setup_env setup_env.ini <other options>
+```
+
 Here the breakdown of the code for 100 noise simulation for 8 frequency channels on 48 processors
 at a resolution of nside = 2048, and few percent of the sky. Notice that the
 Cholesky factorisation  is done only once per processor for each frequency band and
