@@ -2,15 +2,106 @@ import numpy as np
 import healpy as hp
 import util_CMB
 import os
+import ConfigParser
+import copy
 
-def modify_input(m1, out):
+import covariances
+
+def generate_noise_sims(config_file, comm=None, env=None):
+    """
+    Main script to perform noise MC simulations.
+    It also computes covariance matrices. All output files are stored on
+    the disk.
+
+    Parameters
+    ----------
+        * config_file: ini file, parser containing instrument parameters
+            (see the setup_instrument.ini provided)
+        * comm: object, communicator containing methods for communications
+            (see communications.py for the def) [Optional]
+        * env: object, contain paths and debugging tools [Optional]
+    """
+    if comm is None:
+        comm = lambda: -1
+        comm.barrier = lambda: -1
+        comm.rank = 0
+        comm.size = 1
+    if env is None:
+        env.verbose = False
+        env.plot = False
+        env.out_name = 'temp'
+        env.outpath_noise = './'
+        env.outpath_masks = './'
+
+    ## Load the parameters from the parser
+    Config = ConfigParser.ConfigParser()
+    Config.read(config_file)
+    instrument = util_CMB.normalise_instrument_parser(
+        Config._sections['InstrumentParameters'])
+
+    ## Share few parameters between objects
+    for k in env.__dict__.keys():
+        setattr(instrument,k,getattr(env,k))
+
+    if env.verbose and comm.rank == 0:
+        print '############ CONFIG ############'
+        print 'Frequency channels (GHz) ------:', instrument.frequencies
+        print 'Noise per array [uK.sqrt(s)] --:', instrument.net_per_arrays
+        print 'Focal plane tubes -------------:', instrument.tubes
+        print 'Number of year of obs ---------:', instrument.calendar_time
+        print 'Efficiency --------------------:', instrument.efficiency
+        print 'Output resoution --------------:', instrument.nside_out
+        print '################################'
+
+    ## Save ini file for later comparison
+    if comm.rank == 0:
+        path = os.path.join(env.out_name, 'setup_instrument.ini')
+        with open(path, 'w') as configfile:
+            Config.write(configfile)
+
+    ## Load input observations
+    ## TODO to be replaced by a call to the scan strategy module
+    m1_input = util_CMB.load_hdf5_data(instrument.input_observations)
+
+    ## Change resolution if necessary
+    m1_input = util_CMB.change_resolution(m1_input, instrument.nside_out)
+
+    ## Loop over frequencies
+    for freq in instrument.frequencies:
+        if env.verbose:
+            print 'Processing ', freq, ' GHz'
+        instrument.frequency = freq
+        instrument.net_per_array = instrument.net_per_arrays[freq]
+        instrument.tube_factor = instrument.tubes[freq.split('_')[1]]
+        instrument.seed_noise = instrument.seeds[freq]
+
+        ## Modify input maps
+        m1_output = copy.copy(m1_input)
+        m1_output, sigma_t_theo, sigma_p_theo = modify_input(
+            m1_output, instrument)
+
+        ## Generate covariances
+        if comm.rank == 0:
+            covariances.generate_covariances(m1_output, instrument)
+        comm.barrier()
+
+        ## Generate noise simulations
+        if instrument.only_covariance is not True:
+            main_noise_MC_loop(m1_output, instrument, comm=comm)
+        else:
+            print 'Generate only covariances'
+            pass
+
+        comm.barrier()
+
+def modify_input(m1, inst):
     """
     Modify the input observations to match the desired output noise level.
 
     Parameters
     ----------
         * m1: object, contain the observations
-        * out: object, contain the input parameters from the ini file
+        * inst: object, contain the input parameters from the ini file
 
     Outputs
     ----------
@@ -22,21 +113,21 @@ def modify_input(m1, out):
     sigma_t_theo, sigma_p_theo = theoretical_noise_level_time_domain(
         m1=m1,
         pixel_size=hp.nside2resol(m1.mapinfo.nside),
-        net_per_array=out.net_per_array, cut=0.0,
-        calendar_time_in=out.input_calendar_time,
-        calendar_time_out=out.calendar_time,
-        efficiency_in=out.input_efficiency,
-        efficiency_out=out.efficiency,
-        freq_in=out.input_sampling_freq,
-        freq_out=out.sampling_freq,
-        tube_factor=out.tube_factor,
-        verbose=out.verbose)
+        net_per_array=inst.net_per_array, cut=0.0,
+        calendar_time_in=inst.input_calendar_time,
+        calendar_time_out=inst.calendar_time,
+        efficiency_in=inst.input_efficiency,
+        efficiency_out=inst.efficiency,
+        freq_in=inst.input_sampling_freq,
+        freq_out=inst.sampling_freq,
+        tube_factor=inst.tube_factor,
+        verbose=inst.verbose)
 
     prepare_map(m1, sigma_t_theo)
 
     return m1, sigma_t_theo, sigma_p_theo
 
-def generate_noise_sims(m1, out, center=[0, 0], comm=None):
+def main_noise_MC_loop(m1, inst, center=[0, 0], comm=None):
     """
     Noise simulations based on the covariance matrix.
     Noise is white but inhomogeneous (specified by nhit pattern in m1).
@@ -44,7 +135,7 @@ def generate_noise_sims(m1, out, center=[0, 0], comm=None):
     Parameters
     ----------
         * m1: object, contain the observations
-        * out: object, contain the input parameters from the ini file
+        * inst: object, contain the input parameters from the ini file
         * center: list of float, center coordinates of the patch. Optional.
         * comm: object, communicator for parallel computing.
 
@@ -56,18 +147,19 @@ def generate_noise_sims(m1, out, center=[0, 0], comm=None):
         comm.rank = 0
         comm.size = 1
 
-    if out.verbose is True and comm.rank == 0:
+    if inst.verbose is True and comm.rank == 0:
+        center = util_CMB.load_center(m1.mapinfo.source)
         compute_noiselevel(
             m1=m1,
             pixel_size=hp.nside2resol(m1.mapinfo.nside) * 180. / np.pi * 60,
             center=center,
-            plot=out.plot)
+            plot=inst.plot)
 
     comm.barrier()
 
     masktot = (m1.w > 0) * (m1.cc > 0.0) * (m1.ss > 0.0)
 
-    cc, ss, cs = util_CMB.compute_weights_fullmap(m1, out, masktot)
+    cc, ss, cs = util_CMB.compute_weights_fullmap(m1, inst, masktot)
 
     noise_per_pixel_I = np.sqrt(1.0 / (m1.w[masktot])) * 1e6
     noise_per_pixel_Q = cc * 1e6
@@ -75,9 +167,9 @@ def generate_noise_sims(m1, out, center=[0, 0], comm=None):
     noise_per_pixel_QU = cs * 1e6
 
     seed_list_I, seed_list_Q, seed_list_U = util_CMB.init_seeds(
-        out.seed_noise, nmc=out.nmc, verbose=out.verbose)
+        inst.seed_noise, nmc=inst.nmc, verbose=inst.verbose)
 
-    if out.verbose is True and comm.rank == 0:
+    if inst.verbose is True and comm.rank == 0:
         print 'Full list of seed for I', seed_list_I
         print 'Full list of seed for Q', seed_list_Q
         print 'Full list of seed for U', seed_list_U
@@ -85,12 +177,12 @@ def generate_noise_sims(m1, out, center=[0, 0], comm=None):
     npix_I = len(noise_per_pixel_I)
     npix_P = len(noise_per_pixel_Q)
 
-    for i in range(comm.rank,out.nmc,comm.size):
+    for i in range(comm.rank,inst.nmc,comm.size):
         state_I_MC = np.random.RandomState(seed_list_I[i])
         state_Q_MC = np.random.RandomState(seed_list_Q[i])
         state_U_MC = np.random.RandomState(seed_list_U[i])
 
-        if out.verbose is True:
+        if inst.verbose is True:
             print 'proc [%d/%d] doing MC #' % (comm.rank, comm.size), i
             print 'proc [%d/%d] having seeds (IQU)' % (comm.rank, comm.size), \
              seed_list_I[i], seed_list_Q[i], seed_list_U[i]
@@ -114,9 +206,9 @@ def generate_noise_sims(m1, out, center=[0, 0], comm=None):
             err_pixel_U, SEEN, nside=m1.mapinfo.nside)
 
         path = os.path.join(
-            out.outpath_noise,
+            inst.outpath_noise,
             'IQU_nside%d_%s_freq%s_white_noise_sim%03d.fits' % (
-                m1.mapinfo.nside, out.name, out.frequency, i))
+                m1.mapinfo.nside, inst.out_name, inst.frequency, i))
 
         util_CMB.write_map(
                 path,
@@ -130,8 +222,9 @@ def generate_noise_sims(m1, out, center=[0, 0], comm=None):
                     ('name', 'SO noise maps'),
                     ('sigma_p [uK.arcmin]', m1.sigma_p)])
 
-    if out.plot is True:
+    if inst.plot is True:
         import pylab as pl
+        center = util_CMB.load_center(m1.mapinfo.source)
         min_ = -20
         max_ = 20
         Inoise_sim[Inoise_sim == 0] = np.nan
