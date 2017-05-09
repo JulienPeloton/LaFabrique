@@ -19,7 +19,13 @@ def generate_covariances(m1, inst):
 
     Pw = util_CMB.partial2full(
         util_CMB.qu_weight_mineig(
-            m1.cc, m1.cs, m1.ss, epsilon=inst.epsilon), obspix, nside)
+            m1.cc,
+            m1.cs,
+            m1.ss,
+            epsilon=inst.epsilon,
+            verbose=inst.verbose),
+        obspix,
+        nside)
     Iw = util_CMB.partial2full(m1.w, obspix, nside)
 
     path = os.path.join(

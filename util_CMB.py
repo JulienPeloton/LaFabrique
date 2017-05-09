@@ -431,7 +431,7 @@ def qu_weight_mineig(cc, cs, ss, epsilon=0., verbose=False):
     weight = np.zeros_like(tr)
     lambda_minus = (tr - val) / 2.
     valid = (lambda_minus > (tr-np.sqrt(tr2 - 4. * epsilon * tr2)) / 2.)
-    valid3 = [x for x in valid if x is True]
+    valid3 = [x for x in valid if x == True]
 
     if verbose:
         print 'criterion is', epsilon, '< det < 1/4 (epsilon= 0. by default)'
