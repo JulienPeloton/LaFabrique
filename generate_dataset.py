@@ -51,12 +51,23 @@ def grabargs(args_param=None):
 
     ## Create folders if necessary
     if comm.rank == 0:
-        if not os.path.exists(environment.out_name):
-            os.makedirs(environment.out_name)
+        ## Create root folder
+        if not os.path.exists(environment.out_path):
+            os.makedirs(environment.out_path)
+
+        ## Create folders for noise and masks
+        environment.outpath_noise = os.path.join(
+            environment.out_path, 'noise')
+        environment.outpath_masks = os.path.join(
+            environment.out_path, 'masks')
+        environment.outpath_foregrounds = os.path.join(
+            environment.out_path, 'foregrounds')
         if not os.path.exists(environment.outpath_noise):
             os.makedirs(environment.outpath_noise)
         if not os.path.exists(environment.outpath_masks):
             os.makedirs(environment.outpath_masks)
+        if not os.path.exists(environment.outpath_foregrounds):
+            os.makedirs(environment.outpath_foregrounds)
 
     return args, environment
 

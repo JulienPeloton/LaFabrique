@@ -27,11 +27,13 @@ def generate_noise_sims(config_file, comm=None, env=None):
         comm.rank = 0
         comm.size = 1
     if env is None:
+        env = lambda: -1
         env.verbose = False
         env.plot = False
-        env.out_name = 'temp'
-        env.outpath_noise = './'
-        env.outpath_masks = './'
+        env.out_name = 'outputs'
+        env.out_path = os.path.join('./', env.out_name)
+        env.outpath_noise = os.path.join('./', env.out_name, 'noise')
+        env.outpath_masks = os.path.join('./', env.out_name, 'masks')
 
     ## Load the parameters from the parser
     Config = ConfigParser.ConfigParser()
@@ -55,7 +57,7 @@ def generate_noise_sims(config_file, comm=None, env=None):
 
     ## Save ini file for later comparison
     if comm.rank == 0:
-        path = os.path.join(env.out_name, 'setup_instrument.ini')
+        path = os.path.join(env.outpath_noise, 'setup_instrument.ini')
         with open(path, 'w') as configfile:
             Config.write(configfile)
 
