@@ -615,13 +615,8 @@ class normalise_env_parser(normalise_parser):
 
         ## Paths and names
         self.out_name = config_dict['out_name']
-        self.outpath_noise = os.path.join(
-            self.out_name, config_dict['outpath_noise'])
-        self.outpath_masks = os.path.join(
-            self.out_name, config_dict['outpath_masks'])
-        self.outpath_foregrounds = os.path.join(
-            self.out_name, config_dict['outpath_foregrounds'])
-
+        self.out_path = os.path.join(
+            config_dict['out_path'], self.out_name)
 
         ## Booleans
         self.plot = self.boolise_it(config_dict, 'plot')
