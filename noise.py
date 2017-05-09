@@ -276,6 +276,15 @@ def prepare_map(map1, sigma_t_theo):
     map1.ss = ss
     map1.cs = cs
 
+def noise_as_function_of_fsky(sigma_t, nhit, nside, frac=0.):
+    mask = nhit > frac
+    npix = float(len(nhit[mask]))
+    sigma_p2 = 4 * np.pi * \
+        sigma_t**2 / npix**2 * \
+        np.sum(np.max(nhit[mask]) / nhit[mask]) * \
+        npix / hp.nside2npix(nside)
+    return np.sqrt(sigma_p2)
+
 def compute_noiselevel(m1, pixel_size, center=[0, 0], plot=True):
     '''
     Dumb routine to check the noise level in the sense of Knox formula.
@@ -311,15 +320,28 @@ def compute_noiselevel(m1, pixel_size, center=[0, 0], plot=True):
         npix / hp.nside2npix(m1.mapinfo.nside)
     print 'sigma_p = ', np.sqrt(sigma_p2), 'muK.arcmin (inhomogeneous)'
 
-    if plot is 'True':
+    if plot is True:
         import pylab as pl
         ## Build N ~ sqrt(AA/AN-1A)
         map_ = np.zeros(12*m1.mapinfo.nside**2)
         map_[m1.mapinfo.obspix[mask_nhit]] = np.sqrt(
-            m1.nhit[mask_nhit] / m1.cc[mask_nhit])
+            m1.nhit[mask_nhit] / m1.w[mask_nhit])
         hp.gnomview(
             map_, rot=center, reso=6.8, xsize=800,
             max=5e-3, title='', notext=True)
+        pl.show()
+
+        ## Show noise evolution as a function of fsky
+        fracs = [0., 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 0.5]
+        sigmas = [
+            noise_as_function_of_fsky(
+                sigma_t,
+                m1.nhit,
+                m1.mapinfo.nside,
+                frac) for frac in [f*np.max(m1.nhit) for f in fracs]]
+        pl.semilogx(fracs,sigmas)
+        pl.xlabel('Fraction of max(hit)',fontsize=18)
+        pl.ylabel('Noise Level ($\mu$K$_{\\rm CMB}$.arcmin)',fontsize=18)
         pl.show()
     print '#############'
 
