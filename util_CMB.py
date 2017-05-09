@@ -569,6 +569,7 @@ class normalise_instrument_parser(normalise_parser):
         self.sampling_freq = self.floatise_it(config_dict['sampling_freq'])
         self.calendar_time = self.floatise_it(config_dict['calendar_time'])
         self.efficiency = self.floatise_it(config_dict['efficiency'])
+        self.epsilon = self.floatise_it(config_dict['epsilon'])
 
         ## Integers
         self.nside_out = self.intise_it(config_dict['nside_out'])
