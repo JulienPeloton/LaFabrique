@@ -20,13 +20,6 @@ def generate_foregrounds(config_file, env=None):
     Adapted from the main of the PySM
     """
     ## TODO: transfer things from instrument to foregrounds!!
-    
-    if env is None:
-        env.verbose = False
-        env.plot = False
-        env.out_name = 'temp'
-        env.outpath_noise = './'
-        env.outpath_masks = './'
 
     ## Get the default parameters
     Config = ConfigParser.ConfigParser()
@@ -43,13 +36,10 @@ def generate_foregrounds(config_file, env=None):
             'GlobalParameters', 'output_dir', foregrounds.output_dir)
         Config.set(
             'GlobalParameters', 'output_prefix', foregrounds.output_prefix)
+
     path = os.path.join(
         foregrounds.output_dir,
         foregrounds.output_prefix + 'main_config.ini')
-
-    ## Create output folder
-    if not os.path.exists(foregrounds.output_dir):
-        os.makedirs(foregrounds.output_dir)
 
     ## Save the modified ini file, and reload it
     with open(path, 'w') as configfile:
