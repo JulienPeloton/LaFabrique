@@ -22,6 +22,7 @@ This code has the following dependencies:
 * numpy, pylab, scipy, etc (required)
 * healpy (required)
 * h5py (required)
+* ephem (required for scanning strategy)
 * mpi4py (for parallel computing - optional)
 * PySM (foreground generation see https://github.com/bthorne93/PySM_public - optional)
 
