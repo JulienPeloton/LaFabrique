@@ -15,6 +15,10 @@ def addargs(parser):
         required=True,
         help='Configuration file for the environment.')
     parser.add_argument(
+        '-setup_scanning', dest='setup_scanning',
+        required=False, default=None,
+        help='Configuration file for the scanning strategy.')
+    parser.add_argument(
         '-setup_instrument', dest='setup_instrument',
         required=False, default=None,
         help='Configuration file for the instrument.')
@@ -76,6 +80,10 @@ def grabargs(args_param=None):
 if __name__ == '__main__':
     args_param = None
     args, environment = grabargs(args_param)
+
+    if args.scanning_strategy is not None and comm.rank == 0:
+        scanning_strategy.generate_scans(args.setup_scanning, environment)
+    comm.barrier()
 
     ## Generate noise
     if args.setup_instrument is not None:
