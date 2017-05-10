@@ -6,7 +6,38 @@ import os
 from time import time
 from scipy import weave
 
+# pyslalib now installs slalib.so to site-packages/pyslalib/slalib.so
+try:
+	from pyslalib import slalib
+except ImportError:
+	import slalib
+
 DEBUG = True
+
+def gregi_to_mjd(year,month,day,hour,minute,second):
+	fracday,status = slalib.sla_dtf2d(hour,minute,second)
+	mjd,status = slalib.sla_cldj(year,month,day)
+	mjd += fracday
+
+	return mjd
+
+def date_to_greg(date):
+	date_ = str(date)
+	date_ = str(date.datetime())
+	return date_.split('.')[0].replace('-','').replace(':','').replace(' ','_')
+
+def greg_to_mjd(str):
+	year = int(str[:4])
+	month = int(str[4:6])
+	day = int(str[6:8])
+	hour = int(str[9:11])
+	minute = int(str[11:13])
+	second = int(str[13:15])
+
+	return gregi_to_mjd(year,month,day,hour,minute,second)
+
+def date_to_mjd(date):
+	return greg_to_mjd(date_to_greg(date))
 
 def rad2am(rad):
     """
@@ -474,7 +505,11 @@ class normalise_parser(object):
 
     @staticmethod
     def normalise_array(array, func):
-        return np.array([func(i) for i in array.split()])
+        array_out = np.array([func(i) for i in array.split()])
+        if len(array_out) > 0:
+            return array_out
+        else:
+            return None
 
     @staticmethod
     def make_dic(keys, array, func):
@@ -619,6 +654,7 @@ class normalise_scanning_parser(normalise_parser):
         self.starting_date = config_dict['starting_date']
 
         ## Booleans
+        self.full_circle = self.boolise_it(config_dict, 'full_circle')
 
         ## Floats
         self.sky_speed = self.floatise_it(config_dict['sky_speed'])
@@ -626,6 +662,8 @@ class normalise_scanning_parser(normalise_parser):
 
         ## Integers
         self.number_of_days = self.intise_it(config_dict['number_of_days'])
+        self.length_of_cycle = self.intise_it(config_dict['length_of_cycle'])
+        self.nside = self.intise_it(config_dict['nside'])
 
         ## Arrays
         self.el = self.normalise_array(
@@ -638,6 +676,19 @@ class normalise_scanning_parser(normalise_parser):
             config_dict['begin_lst'], lambda x: x)
         self.end_LST = self.normalise_array(
             config_dict['end_lst'], lambda x: x)
+
+        self.el = self.normalise_array(
+            config_dict['el'], self.floatise_it)
+        self.dec_min = self.normalise_array(
+            config_dict['dec_min'], self.floatise_it)
+        self.dec_max = self.normalise_array(
+            config_dict['dec_max'], self.floatise_it)
+        self.begin_RA = self.normalise_array(
+            config_dict['begin_ra'], lambda x: x)
+        self.end_RA = self.normalise_array(
+            config_dict['end_ra'], lambda x: x)
+        self.orientation = self.normalise_array(
+            config_dict['orientation'], lambda x: x)
 
 class normalise_env_parser(normalise_parser):
     """
