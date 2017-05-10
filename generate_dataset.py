@@ -49,6 +49,14 @@ def grabargs(args_param=None):
     environment = util_CMB.normalise_env_parser(
         Config._sections['Environment'])
 
+    ## Initialise paths
+    environment.outpath_noise = os.path.join(
+        environment.out_path, 'noise')
+    environment.outpath_masks = os.path.join(
+        environment.out_path, 'masks')
+    environment.outpath_foregrounds = os.path.join(
+        environment.out_path, 'foregrounds')
+
     ## Create folders if necessary
     if comm.rank == 0:
         ## Create root folder
@@ -56,12 +64,6 @@ def grabargs(args_param=None):
             os.makedirs(environment.out_path)
 
         ## Create folders for noise and masks
-        environment.outpath_noise = os.path.join(
-            environment.out_path, 'noise')
-        environment.outpath_masks = os.path.join(
-            environment.out_path, 'masks')
-        environment.outpath_foregrounds = os.path.join(
-            environment.out_path, 'foregrounds')
         if not os.path.exists(environment.outpath_noise):
             os.makedirs(environment.outpath_noise)
         if not os.path.exists(environment.outpath_masks):
