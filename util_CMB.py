@@ -601,6 +601,44 @@ class normalise_instrument_parser(normalise_parser):
             val, key = freq.split('_')
             self.tubes_to_freq[key].append(int(val))
 
+class normalise_scanning_parser(normalise_parser):
+    """
+    Class to handle scanning parser.
+    It converts initial dictionary into an object.
+    """
+    def __init__(self, config_dict):
+        """
+        Parameters
+        ----------
+            * config_dict: dic, dictionary coming from the ini file.
+        """
+        normalise_parser.__init__(self, config_dict)
+
+        ## Paths and names
+        self.name_instrument = config_dict['name_instrument']
+        self.starting_date = config_dict['starting_date']
+
+        ## Booleans
+
+        ## Floats
+        self.sky_speed = self.floatise_it(config_dict['sky_speed'])
+        self.sampling_freq = self.floatise_it(config_dict['sampling_freq'])
+
+        ## Integers
+        self.number_of_days = self.intise_it(config_dict['number_of_days'])
+
+        ## Arrays
+        self.el = self.normalise_array(
+            config_dict['el'], self.floatise_it)
+        self.az_min = self.normalise_array(
+            config_dict['az_min'], self.floatise_it)
+        self.az_max = self.normalise_array(
+            config_dict['az_max'], self.floatise_it)
+        self.begin_LST = self.normalise_array(
+            config_dict['begin_lst'], lambda x: x)
+        self.end_LST = self.normalise_array(
+            config_dict['end_lst'], lambda x: x)
+
 class normalise_env_parser(normalise_parser):
     """
     Class to handle environment parser.

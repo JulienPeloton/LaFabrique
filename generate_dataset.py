@@ -3,6 +3,7 @@ import sys
 import argparse
 import ConfigParser
 
+import scanning_strategy
 import noise
 import foregrounds
 import util_CMB
@@ -36,12 +37,15 @@ def grabargs(args_param=None):
 
     if comm.rank == 0:
         list_of_sims = ''
+        if args.setup_scanning is not None:
+            list_of_sims += ' scans '
         if args.setup_instrument is not None:
             list_of_sims += ' noise '
         if args.setup_foregrounds is not None:
             list_of_sims += ' foregrounds'
         if len(list_of_sims) == 0:
             print 'You need to select at least one ini file!\n'
+            print ' * scans (see setup_scanning.ini)\n'
             print ' * instrument (see setup_instrument.ini)\n'
             print ' * foregrounds (see setup_foregrounds.ini)\n'
             sys.exit()
@@ -81,7 +85,7 @@ if __name__ == '__main__':
     args_param = None
     args, environment = grabargs(args_param)
 
-    if args.scanning_strategy is not None and comm.rank == 0:
+    if args.setup_scanning is not None and comm.rank == 0:
         scanning_strategy.generate_scans(args.setup_scanning, environment)
     comm.barrier()
 
