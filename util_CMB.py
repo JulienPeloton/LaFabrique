@@ -8,36 +8,36 @@ from scipy import weave
 
 # pyslalib now installs slalib.so to site-packages/pyslalib/slalib.so
 try:
-	from pyslalib import slalib
+    from pyslalib import slalib
 except ImportError:
-	import slalib
+    import slalib
 
 DEBUG = True
 
 def gregi_to_mjd(year,month,day,hour,minute,second):
-	fracday,status = slalib.sla_dtf2d(hour,minute,second)
-	mjd,status = slalib.sla_cldj(year,month,day)
-	mjd += fracday
+    fracday,status = slalib.sla_dtf2d(hour,minute,second)
+    mjd,status = slalib.sla_cldj(year,month,day)
+    mjd += fracday
 
-	return mjd
+    return mjd
 
 def date_to_greg(date):
-	date_ = str(date)
-	date_ = str(date.datetime())
-	return date_.split('.')[0].replace('-','').replace(':','').replace(' ','_')
+    date_ = str(date)
+    date_ = str(date.datetime())
+    return date_.split('.')[0].replace('-','').replace(':','').replace(' ','_')
 
 def greg_to_mjd(str):
-	year = int(str[:4])
-	month = int(str[4:6])
-	day = int(str[6:8])
-	hour = int(str[9:11])
-	minute = int(str[11:13])
-	second = int(str[13:15])
+    year = int(str[:4])
+    month = int(str[4:6])
+    day = int(str[6:8])
+    hour = int(str[9:11])
+    minute = int(str[11:13])
+    second = int(str[13:15])
 
-	return gregi_to_mjd(year,month,day,hour,minute,second)
+    return gregi_to_mjd(year,month,day,hour,minute,second)
 
 def date_to_mjd(date):
-	return greg_to_mjd(date_to_greg(date))
+    return greg_to_mjd(date_to_greg(date))
 
 def rad2am(rad):
     """
@@ -149,7 +149,7 @@ def load_center(patch):
         center = [178.3, -0.5]
     elif patch == 'LST':
         center = [70, -45]
-    elif patch == 'BICEP':
+    elif patch == 'SO_deep':
         center = [0., -57.5]
     elif patch == 'center':
         center = [0, 0]
@@ -588,19 +588,12 @@ class normalise_instrument_parser(normalise_parser):
         normalise_parser.__init__(self, config_dict)
 
         ## Paths and names
-        self.input_observations = config_dict['input_observations']
         self.lapack = config_dict['lapack']
 
         ## Booleans
         self.only_covariance = self.boolise_it(config_dict, 'only_covariance')
 
         ## Floats
-        self.input_sampling_freq = self.floatise_it(
-            config_dict['input_sampling_freq'])
-        self.input_calendar_time = self.floatise_it(
-            config_dict['input_calendar_time'])
-        self.input_efficiency = self.floatise_it(
-            config_dict['input_efficiency'])
         self.sampling_freq = self.floatise_it(config_dict['sampling_freq'])
         self.calendar_time = self.floatise_it(config_dict['calendar_time'])
         self.efficiency = self.floatise_it(config_dict['efficiency'])
@@ -659,11 +652,14 @@ class normalise_scanning_parser(normalise_parser):
         ## Floats
         self.sky_speed = self.floatise_it(config_dict['sky_speed'])
         self.sampling_freq = self.floatise_it(config_dict['sampling_freq'])
+        self.fp_radius_amin = self.floatise_it(config_dict['fp_radius_amin'])
+        self.HWP_frequency = self.floatise_it(config_dict['hwp_frequency'])
 
         ## Integers
         self.number_of_days = self.intise_it(config_dict['number_of_days'])
         self.length_of_cycle = self.intise_it(config_dict['length_of_cycle'])
         self.nside = self.intise_it(config_dict['nside'])
+        self.nbolos = self.intise_it(config_dict['nbolos'])
 
         ## Arrays
         self.el = self.normalise_array(

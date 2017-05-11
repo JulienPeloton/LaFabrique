@@ -2,7 +2,30 @@ import cPickle as pickle
 import h5py
 import numpy as np
 import healpy as hp
-import util_CMB
+
+def partial2full(partial, obspix, nside, fill_with_nan=True):
+    """
+    Convert partial map into full sky map
+
+    Parameters
+    ----------
+        * partial: 1D array, the observed data
+        * obspix: 1D array, the label of observed pixels
+        * nside: int, nside of the partial data
+        * fill_with_nan: boolean, if True it fills with nan unobserved
+            pixels (it allows compression when saving on the disk)
+
+    Output
+    ----------
+        * full: 1D array, full sky map
+
+    """
+    if fill_with_nan is True:
+        full = np.zeros(12 * nside**2) * np.nan
+    else:
+        full = np.zeros(12 * nside**2)
+    full[obspix] = partial
+    return full
 
 class HealpixMapInfo(object):
     def __init__(self, npix, obspix, nside, source):
@@ -31,6 +54,9 @@ class InputScan():
         self.nhit = np.zeros(npix, dtype=np.int32)
 
     def save(self, fn):
+        """
+        Yo!
+        """
         f = h5py.File(fn, 'w')
         npix = (self.mapinfo.npix, )
         t = '=f8'
@@ -53,6 +79,9 @@ class InputScan():
 
     @staticmethod
     def load(fn):
+        """
+        Yo!
+        """
         f = h5py.File(fn, 'r')
         mapinfos = f.attrs['mapinfo']
         mapinfo = pickle.loads(mapinfos)
@@ -69,16 +98,16 @@ class InputScan():
     def change_resolution(m_in, nside_out):
         print 'Changing the resolution of the map from %d to %d' % \
             (m_in.mapinfo.nside, nside_out)
-        tmp = util_CMB.ud_grade(
-            util_CMB.partial2full(
+        tmp = hp.ud_grade(
+            partial2full(
                 m_in.nhit,
                 m_in.mapinfo.obspix,
                 m_in.mapinfo.nside), nside_out)
         obspix = np.where(tmp > 0)[0]
 
         def replace(field, obspix_in, obspix_out, nside_in, nside_out):
-            tmp = util_CMB.ud_grade(
-                util_CMB.partial2full(field, obspix_in, nside_in), nside_out)
+            tmp = hp.ud_grade(
+                partial2full(field, obspix_in, nside_in), nside_out)
             return tmp[obspix_out]
 
         m_in.nhit = replace(
@@ -114,6 +143,7 @@ class InputScan():
 
         m_in.mapinfo.nside = nside_out
         m_in.mapinfo.obspix = obspix
+        m_in.mapinfo.npix = len(obspix)
 
         return m_in
 
