@@ -151,6 +151,8 @@ def load_center(patch):
         center = [70, -45]
     elif patch == 'SO_deep':
         center = [0., -57.5]
+    elif patch == 'SO_shallow':
+        center = [0., 0.]
     elif patch == 'center':
         center = [0, 0]
     else:
@@ -676,9 +678,9 @@ class normalise_scanning_parser(normalise_parser):
         self.el = self.normalise_array(
             config_dict['el'], self.floatise_it)
         self.dec_min = self.normalise_array(
-            config_dict['dec_min'], self.floatise_it)
+            config_dict['dec_min'], lambda x: x)
         self.dec_max = self.normalise_array(
-            config_dict['dec_max'], self.floatise_it)
+            config_dict['dec_max'], lambda x: x)
         self.begin_RA = self.normalise_array(
             config_dict['begin_ra'], lambda x: x)
         self.end_RA = self.normalise_array(
