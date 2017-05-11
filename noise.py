@@ -63,7 +63,9 @@ def generate_noise_sims(config_file, comm=None, env=None):
 
     ## Load input observations
     ## TODO to be replaced by a call to the scan strategy module
-    m1_input = util_CMB.load_hdf5_data(instrument.input_observations)
+    # m1_input = util_CMB.load_hdf5_data(instrument.input_observations)
+    m1_input = util_CMB.load_hdf5_data(
+        os.path.join(env.outpath_masks, env.out_name + '.hdf5'))
 
     ## Change resolution if necessary
     m1_input = util_CMB.change_resolution(m1_input, instrument.nside_out)
@@ -116,11 +118,8 @@ def modify_input(m1, inst):
         m1=m1,
         pixel_size=hp.nside2resol(m1.mapinfo.nside),
         net_per_array=inst.net_per_array, cut=0.0,
-        calendar_time_in=inst.input_calendar_time,
         calendar_time_out=inst.calendar_time,
-        efficiency_in=inst.input_efficiency,
         efficiency_out=inst.efficiency,
-        freq_in=inst.input_sampling_freq,
         freq_out=inst.sampling_freq,
         tube_factor=inst.tube_factor,
         verbose=inst.verbose)
@@ -369,9 +368,9 @@ def ukam(net_per_array, npix, tobs, pixel_size):
 
 def theoretical_noise_level_time_domain(
     m1, pixel_size, net_per_array=331.,
-    cut=0.0, calendar_time_in=12./365, calendar_time_out=2.,
-    efficiency_in=1./6., efficiency_out=0.2,
-    freq_in=15., freq_out=30., tube_factor=1, verbose=False):
+    cut=0.0, calendar_time_out=2.,
+    efficiency_out=0.2,
+    freq_out=30., tube_factor=1, verbose=False):
     '''
     Given some instrument configuration, compute the noise level in time-domain
     This noise level corresponds to noise for temperature. Noise level in
@@ -384,11 +383,8 @@ def theoretical_noise_level_time_domain(
         * net_per_array: float or list of, Noise Equivalent Temperature of
              the array [uk.sqrt(s)]. (1702.07467)
         * cut: float, Remove pixel according to the best observed one.
-        * calendar_time_in: float, total input time of observation [year]
         * calendar_time_out: float, total time of observation desired [year]
-        * efficiency_in: float, input efficiency of observation
         * efficiency_out: float, output efficiency of observation
-        * freq_in: float, sampling frequency used in input observation [Hz]
         * freq_out: float, sampling frequency used for output observation [Hz]
         * tube_factor: int, number of optics tube of the instrument
         * verbose: boolean, print-out million of things if True
@@ -403,24 +399,18 @@ def theoretical_noise_level_time_domain(
     net_per_array = 1./np.sqrt(
         tube_factor * net_per_array**-2. + NET_tmp**-2.)
 
-    ## Level of noise in the map (rough estimate)
-    sigma_p_in = ukam(net_per_array, Npix, util_CMB.year2sec(
-        calendar_time_in * efficiency_in), pixel_size)
-
     sigma_p_out = ukam(net_per_array, Npix, util_CMB.year2sec(
         calendar_time_out * efficiency_out), pixel_size)
 
     ## RMS per pixel
-    boost = (calendar_time_out * efficiency_out) / \
-        (calendar_time_in * efficiency_in)
-
-    m1.nhit = m1.nhit * boost
     sigma_t_out = sigma_p_out * np.sqrt(
         hp.nside2npix(m1.mapinfo.nside) / 4. / np.pi)
 
     if verbose:
-        print 'Boost factor (out/bin) = ', boost
+        fsky = Npix / float(hp.nside2npix(m1.mapinfo.nside))
+        print 'FSKY (%%) = ', fsky * 100
         print 'sigma_p (out) = ', sigma_p_out, 'muK.arcmin'
+        print 'sigma_p (out) [40%%] = ', sigma_p_out * np.sqrt(0.4/fsky), 'muK.arcmin'
         print 'sigma_t (out) = ', sigma_t_out, 'muK'
 
     m1.sigma_p = sigma_p_out
