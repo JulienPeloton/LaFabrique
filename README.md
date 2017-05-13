@@ -14,8 +14,7 @@ This package contains scripts for generating simulated CMB datasets (current and
 * Frequency coverage
     * Multi-frequency
 * Sky coverage
-    * The inputs are based on a potential future CMB ground-based experiment.
-    * Include a call to ScanStrategy code (TBD)
+    * Scanning strategy simulator included
 
 ### Before starting
 This code has the following dependencies:
