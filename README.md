@@ -49,8 +49,8 @@ For example, just use (replace mpirun by your favourite one):
 ```python
 mpirun -n <nproc> python generate_dataset.py
     -setup_env setup_env.ini
-    -setup_scanning setup_scanning
-    -setup_instrument setup_instrument
+    -setup_scanning setup_scanning.ini
+    -setup_instrument setup_instrument.ini
 ```
 
 Note that at NERSC, you have to replace the python binary by python-mpi which is
