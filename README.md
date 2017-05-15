@@ -41,6 +41,21 @@ python generate_dataset.py -h
 python generate_dataset.py -setup_env setup_env.ini <other options>
 ```
 
+The code has a parallel architecture, which can be useful for large noise
+simulations at high resolution (simulation of scan strategy and
+foregrounds are done serially for the moment).
+For example, just use (replace mpirun by your favourite one):
+
+```python
+mpirun -n <nproc> python generate_dataset.py
+    -setup_env setup_env.ini
+    -setup_scanning setup_scanning
+    -setup_instrument setup_instrument
+```
+
+Note that at NERSC, you have to replace the python binary by python-mpi which is
+optimized for parallel computing.
+
 Here the breakdown of the code for 100 noise simulation for 8 frequency channels on 48 processors
 at a resolution of nside = 2048, and few percent of the sky. Notice that the
 Cholesky factorisation  is done only once per processor for each frequency band and
