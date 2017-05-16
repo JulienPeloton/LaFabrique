@@ -56,9 +56,9 @@ mpirun -n <nproc> python generate_dataset.py
 Note that at NERSC, you have to replace the python binary by python-mpi which is
 optimized for parallel computing.
 
-Here the breakdown of the code for 100 noise simulation for 8 frequency channels on 48 processors
-at a resolution of nside = 2048, and few percent of the sky. Notice that the
-Cholesky factorisation  is done only once per processor for each frequency band and
+Here is the breakdown of the code for 100 noise simulations for 8 frequency channels on 48 processors
+at a resolution of nside = 2048, and a few percent of the sky. Notice that the
+Cholesky factorisation is done only once per processor for each frequency band and
 for all MC simulations (corresponds to 48[proc] * 8[freq] = 384 calls below).
 
 ![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/perf_100MC_nside2048.png)
