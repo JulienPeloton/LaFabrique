@@ -4,7 +4,11 @@ import numpy as np
 import healpy as hp
 import os
 from time import time
-from scipy import weave
+try:
+    from scipy import weave
+except:
+    ## weave has been removed from scipy version > 0.18
+    import weave
 
 DEBUG = True
 

@@ -4,6 +4,7 @@ python:
 install:
     - pip install --upgrade pip setuptools wheel
     - pip install numpy scipy
+    - pip install weave
     - sudo apt-get install -qq libhdf5-serial-dev
     - pip install h5py
     - pip install healpy

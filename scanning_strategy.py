@@ -15,7 +15,11 @@ import util_CMB
 import inputs
 
 from util_CMB import benchmark
-from scipy import weave
+try:
+    from scipy import weave
+except:
+    ## weave has been removed from scipy version > 0.18
+    import weave
 
 # ## numerical constants
 radToDeg = 180/np.pi
