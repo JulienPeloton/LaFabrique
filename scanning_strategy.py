@@ -48,6 +48,11 @@ def generate_scans(config_file, env=None):
         Config._sections['ScanningParameters'])
     checks_param(scanning)
 
+    ## Save ini file for later comparison
+    path = os.path.join(env.outpath_masks, 'setup_scanning.ini')
+    with open(path, 'w') as configfile:
+        Config.write(configfile)
+
     ## Load experiment technical details
     experience = instrument(scanning.name_instrument)
 
