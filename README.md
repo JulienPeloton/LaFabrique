@@ -1,6 +1,5 @@
-LaFabrique
+LaFabrique [![Build Status](https://travis-ci.org/JulienPeloton/LaFabrique.svg?branch=master)](https://travis-ci.org/JulienPeloton/LaFabrique)
 ==
-echo "[![Build Status](https://travis-ci.org/JulienPeloton/LaFabrique.svg?branch=master)](https://travis-ci.org/JulienPeloton/LaFabrique)"
 
 ![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/outputs.png)
 
