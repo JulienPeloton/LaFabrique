@@ -8,6 +8,11 @@ import noise
 import util_CMB
 import communications as comm
 
+try:
+    import foregrounds
+except:
+    print 'PySM not found - no foreground generation possible...'
+
 def addargs(parser):
     ''' Parse command line arguments '''
     parser.add_argument(
@@ -95,6 +100,5 @@ if __name__ == '__main__':
 
     ## Generate foregrounds
     if args.setup_foregrounds is not None and comm.rank == 0:
-        import foregrounds
         foregrounds.generate_foregrounds(args.setup_foregrounds, environment)
     comm.barrier()
