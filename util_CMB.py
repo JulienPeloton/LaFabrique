@@ -6,38 +6,12 @@ import os
 from time import time
 from scipy import weave
 
-# pyslalib now installs slalib.so to site-packages/pyslalib/slalib.so
-try:
-    from pyslalib import slalib
-except ImportError:
-    import slalib
-
 DEBUG = True
-
-def gregi_to_mjd(year,month,day,hour,minute,second):
-    fracday,status = slalib.sla_dtf2d(hour,minute,second)
-    mjd,status = slalib.sla_cldj(year,month,day)
-    mjd += fracday
-
-    return mjd
 
 def date_to_greg(date):
     date_ = str(date)
     date_ = str(date.datetime())
     return date_.split('.')[0].replace('-','').replace(':','').replace(' ','_')
-
-def greg_to_mjd(str):
-    year = int(str[:4])
-    month = int(str[4:6])
-    day = int(str[6:8])
-    hour = int(str[9:11])
-    minute = int(str[11:13])
-    second = int(str[13:15])
-
-    return gregi_to_mjd(year,month,day,hour,minute,second)
-
-def date_to_mjd(date):
-    return greg_to_mjd(date_to_greg(date))
 
 def rad2am(rad):
     """

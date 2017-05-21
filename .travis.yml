@@ -6,7 +6,6 @@ install:
     - pip install h5py
     - pip install healpy
     - pip install ephem
-    - pip install pyslalib
 
 script:
     - python test/check_maps.py

@@ -14,7 +14,6 @@ import healpy as hp
 import util_CMB
 import inputs
 
-from util_CMB import date_to_mjd
 from util_CMB import benchmark
 from scipy import weave
 
