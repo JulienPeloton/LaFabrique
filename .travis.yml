@@ -2,7 +2,7 @@ language: python
 python:
     - "2.7"
 install:
-    - apt-get install -qq libhdf5-serial-dev
+    - sudo apt-get install -qq libhdf5-serial-dev
     - pip install h5py
     - pip install healpy
     - pip install ephem
