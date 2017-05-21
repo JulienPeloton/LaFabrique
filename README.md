@@ -17,14 +17,14 @@ This package contains scripts for generating simulated CMB datasets (current and
     * Scanning strategy simulator included
 
 ### Before starting
-This code has the following dependencies:
+This code has the following dependencies (see the travis install section):
 * numpy, pylab, scipy, etc (required)
 * healpy (required)
-* h5py (required)
-* slalib or pyslalib (required)
-* ephem (required for scanning strategy)
-* mpi4py (for parallel computing - optional)
-* PySM (foreground generation see https://github.com/bthorne93/PySM_public - optional)
+* h5py (required) + libhdf5 if using linux
+* weave (optional - no longer part of scipy for version 0.19)
+* ephem (required - for scanning strategy)
+* mpi4py (optional - for parallel computing)
+* PySM (optional - foreground generation see https://github.com/bthorne93/PySM_public)
 
 Make sure you update your PYTHONPATH to use the code.
 Just add in your bashrc:
