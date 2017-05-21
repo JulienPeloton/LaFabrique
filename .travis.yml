@@ -4,6 +4,8 @@ python:
 install:
     - pip install healpy
     - pip install ephem
+    - pip install h5py
+    - pip install pyslalib
 
 script:
     - python test/check_maps.py
