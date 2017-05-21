@@ -5,7 +5,6 @@ import ConfigParser
 
 import scanning_strategy
 import noise
-import foregrounds
 import util_CMB
 import communications as comm
 
@@ -96,5 +95,6 @@ if __name__ == '__main__':
 
     ## Generate foregrounds
     if args.setup_foregrounds is not None and comm.rank == 0:
+        import foregrounds
         foregrounds.generate_foregrounds(args.setup_foregrounds, environment)
     comm.barrier()
