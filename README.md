@@ -21,7 +21,7 @@ This code has the following dependencies (see the travis install section):
 * numpy, pylab, scipy, etc (required)
 * healpy (required)
 * h5py (required) + libhdf5 if using linux
-* weave (optional - no longer part of scipy for version 0.19)
+* weave (optional if scipy <= v0.18 - required otherwise because no longer part of scipy v0.19)
 * ephem (required - for scanning strategy)
 * mpi4py (optional - for parallel computing)
 * PySM (optional - foreground generation see https://github.com/bthorne93/PySM_public)
