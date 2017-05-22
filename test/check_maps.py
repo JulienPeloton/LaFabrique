@@ -2,6 +2,7 @@ import numpy as np
 import healpy as hp
 import subprocess
 import os
+import sys
 
 class bcolors:
     HEADER = '\033[95m'
@@ -24,6 +25,7 @@ def output(passed):
         print bcolors.OKGREEN + "   PASSED" + bcolors.ENDC
     else:
         print bcolors.FAIL + "   FAILED" + bcolors.ENDC
+	sys.exit()
 
 
 def compare_covariance_maps(freqs):
