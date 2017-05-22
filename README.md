@@ -26,7 +26,13 @@ This code has the following dependencies (see the travis install section):
 * mpi4py (optional - for parallel computing)
 * PySM (optional - foreground generation see https://github.com/bthorne93/PySM_public)
 
-Make sure you update your PYTHONPATH to use the code.
+## Installation
+We provide a setup.py for the installation. Just run:
+```bash
+python setup.py install
+```
+Make sure you have correct permissions (otherwise just add --user).
+You can also directly use the code by updating manually your PYTHONPATH.
 Just add in your bashrc:
 ```bash
 LaFabriquePATH=/path/to/the/package
