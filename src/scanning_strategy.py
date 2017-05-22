@@ -12,7 +12,7 @@ import os
 import numpy as np
 import healpy as hp
 import util_CMB
-import inputs
+import InputScan
 
 from util_CMB import benchmark
 try:
@@ -60,12 +60,12 @@ def generate_scans(config_file, env=None):
     experience = instrument(scanning.name_instrument)
 
     ## Initialise hdf5 file
-    scan_info = inputs.HealpixMapInfo(
+    scan_info = InputScan.HealpixMapInfo(
         npix=hp.nside2npix(scanning.nside),
         obspix=np.zeros(hp.nside2npix(scanning.nside)),
         nside=scanning.nside,
         source=scanning.name_instrument)
-    scan = inputs.InputScan(scan_info)
+    scan = InputScan.InputScan(scan_info)
 
     ## Loop over CESes and generate scans
     for n in range(scanning.length_of_cycle):

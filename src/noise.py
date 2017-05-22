@@ -5,7 +5,7 @@ import os
 import ConfigParser
 import copy
 
-import covariances
+import covariance
 
 def generate_noise_sims(config_file, comm=None, env=None):
     """
@@ -86,7 +86,7 @@ def generate_noise_sims(config_file, comm=None, env=None):
 
         ## Generate covariances
         if comm.rank == 0:
-            covariances.generate_covariances(m1_output, instrument)
+            covariance.generate_covariances(m1_output, instrument)
         comm.barrier()
 
         ## Generate noise simulations
@@ -283,6 +283,27 @@ def noise_as_function_of_fsky(sigma_t, nhit, nside, frac=0.):
         np.sum(np.max(nhit[mask]) / nhit[mask]) * \
         npix / hp.nside2npix(nside)
     return np.sqrt(sigma_p2)
+
+def fsky_as_function_of_threshold(nhit, nside, frac=0.):
+    mask = nhit > frac
+    npix = float(len(nhit[mask]))
+    return npix / hp.nside2npix(nside) * 100
+
+def noise_as_function_of_epsilon(sigma_t, nhit, w, cc, cs, nside, epsilons=[]):
+    mask_tmp = w > 0
+    cc = cc[mask_tmp]/w[mask_tmp]
+    cs = cs[mask_tmp]/w[mask_tmp]
+    sigmas_p2 = []
+    fskys = []
+    for epsilon in epsilons:
+        mask = ((cc-0.5)**2 + cs**2 < 0.25 - epsilon) * mask_tmp
+        npix = float(len(nhit[mask]))
+        fskys.append(npix / hp.nside2npix(nside) * 100)
+        sigmas_p2.append(4 * np.pi * \
+            sigma_t**2 / npix**2 * \
+            np.sum(np.max(nhit[mask]) / nhit[mask]) * \
+            npix / hp.nside2npix(nside))
+    return np.sqrt(np.array(sigmas_p2)), fskys
 
 def compute_noiselevel(m1, pixel_size, center=[0, 0], plot=True):
     '''

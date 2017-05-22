@@ -1,5 +1,5 @@
-from inputs import InputScan
-from inputs import InputScan_full
+from InputScan import InputScan
+from InputScan import InputScan_full
 import numpy as np
 import healpy as hp
 import os

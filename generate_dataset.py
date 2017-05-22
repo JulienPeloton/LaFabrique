@@ -6,10 +6,10 @@ import ConfigParser
 import scanning_strategy
 import noise
 import util_CMB
-import communications as comm
+import communication as comm
 
 try:
-    import foregrounds
+    import foreground
 except:
     print 'PySM not found - no foreground generation possible...'
 
@@ -100,5 +100,5 @@ if __name__ == '__main__':
 
     ## Generate foregrounds
     if args.setup_foregrounds is not None and comm.rank == 0:
-        foregrounds.generate_foregrounds(args.setup_foregrounds, environment)
+        foreground.generate_foregrounds(args.setup_foregrounds, environment)
     comm.barrier()
