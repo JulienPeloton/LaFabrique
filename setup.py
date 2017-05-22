@@ -23,7 +23,6 @@ To get a full list of avaiable commands, read the output of:
 
     python setup.py --help-commands
 """
-# from numpy.distutils.core import setup
 from setuptools import find_packages
 from setuptools import setup
 
@@ -34,8 +33,8 @@ if __name__ == "__main__":
         author_email='j.peloton@sussex.ac.uk',
         url='https://github.com/JulienPeloton/LaFabrique',
         # package_dir = {'LaFabrique': 'src'},
-        packages=['LaFabrique'],
         install_requires=['healpy', 'h5py', 'ephem', 'weave'],
+        packages=['LaFabrique'],
         description='Generate simulated datasets for CMB experiments',
         classifiers=[
             "Programming Language :: Python :: 2",

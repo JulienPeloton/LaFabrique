@@ -9,7 +9,7 @@ install:
     - pip install h5py
     - pip install healpy
     - pip install ephem
-    - python setup.py install
+    - python setup.py install --user
 
 script:
     - python test/check_maps.py
