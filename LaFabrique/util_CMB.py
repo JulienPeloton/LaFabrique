@@ -1,3 +1,4 @@
+from . import InputScan
 from InputScan import InputScan
 from InputScan import InputScan_full
 import numpy as np

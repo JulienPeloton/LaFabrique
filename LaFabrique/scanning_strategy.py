@@ -11,8 +11,8 @@ import os
 
 import numpy as np
 import healpy as hp
-import util_CMB
-import InputScan
+from . import util_CMB
+from . import InputScan
 
 from util_CMB import benchmark
 try:

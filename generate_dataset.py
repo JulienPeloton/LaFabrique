@@ -3,13 +3,13 @@ import sys
 import argparse
 import ConfigParser
 
-import scanning_strategy
-import noise
-import util_CMB
-import communication as comm
+from LaFabrique import scanning_strategy
+from LaFabrique import noise
+from LaFabrique import util_CMB
+from LaFabrique import communication as comm
 
 try:
-    import foreground
+    from LaFabrique import foreground
 except:
     print 'PySM not found - no foreground generation possible...'
 

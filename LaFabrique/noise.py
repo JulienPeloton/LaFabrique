@@ -5,7 +5,7 @@ import os
 import ConfigParser
 import copy
 
-import covariance
+from . import covariance
 
 def generate_noise_sims(config_file, comm=None, env=None):
     """

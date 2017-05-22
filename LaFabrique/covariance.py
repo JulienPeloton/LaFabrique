@@ -1,4 +1,4 @@
-import util_CMB
+from . import util_CMB
 import healpy as hp
 import numpy as np
 import os
