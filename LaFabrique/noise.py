@@ -276,6 +276,21 @@ def prepare_map(map1, sigma_t_theo):
     map1.cs = cs
 
 def noise_as_function_of_fsky(sigma_t, nhit, nside, frac=0.):
+    """
+    Return the level of noise in the map domain as a function of
+    the threshold on the number of hits per pixel.
+
+    Parameters
+    ----------
+        * sigma_t: float or list of floats, level of noise in time domain
+        * nhit: 1D array, vector containing the number of hits per pixel
+        * nside: int, resolution of the map
+        * frac: float, criterion to select pixels.
+            Only pixels with nhits(p) > frac will be kept.
+    Outputs
+    ----------
+        * float or list of floats containing the level of noise in map domain.
+    """
     mask = nhit > frac
     npix = float(len(nhit[mask]))
     sigma_p2 = 4 * np.pi * \
@@ -285,11 +300,46 @@ def noise_as_function_of_fsky(sigma_t, nhit, nside, frac=0.):
     return np.sqrt(sigma_p2)
 
 def fsky_as_function_of_threshold(nhit, nside, frac=0.):
+    """
+    Return the fraction of sky as a function of
+    the threshold on the number of hits per pixel.
+
+    Parameters
+    ----------
+        * nhit: 1D array, vector containing the number of hits per pixel
+        * nside: int, resolution of the map
+        * frac: float, criterion to select pixels.
+            Only pixels with nhits(p) > frac will be kept.
+    Outputs
+    ----------
+        * float, the fraction of sky in percent.
+    """
     mask = nhit > frac
     npix = float(len(nhit[mask]))
     return npix / hp.nside2npix(nside) * 100
 
 def noise_as_function_of_epsilon(sigma_t, nhit, w, cc, cs, nside, epsilons=[]):
+    """
+    Return the level of noise in the map domain as a function of
+    the threshold on the determinant of the pixel covariance matrix.
+
+    Parameters
+    ----------
+        * sigma_t: float or list of floats, level of noise in time domain
+        * nhit: 1D array, vector containing the number of hits per pixel
+        * w: 1D array, vector containing the intensity weight per pixel
+        * cc: 1D array, vector containing the diagonal elements of the
+            polarisation weight per pixel (cos**2)
+        * cs: 1D array, vector containing the off-diagonal elements of the
+            polarisation weight per pixel (cos*sin)
+        * nside: int, resolution of the map
+        * epsilons: list of float, criterion to select pixels.
+            epsilons is between 0. and 1/4.
+    Outputs
+    ----------
+        * float or list of floats containing the level of noise in map domain,
+            and associated fractions of sky.
+    """
     mask_tmp = w > 0
     cc = cc[mask_tmp]/w[mask_tmp]
     cs = cs[mask_tmp]/w[mask_tmp]
@@ -317,7 +367,7 @@ def compute_noiselevel(m1, pixel_size, center=[0, 0], plot=True):
         * center: list of float, center coordinates of the patch. Optional.
         * plot: boolean, plot stuff if True. Optional.
     '''
-    print '#############'
+    print '#######################################'
     print 'CHECK THE MAP'
     mask_nhit = m1.nhit > 0.
     npix = len(m1.nhit[mask_nhit]) ## Number of observed pixels
@@ -363,7 +413,7 @@ def compute_noiselevel(m1, pixel_size, center=[0, 0], plot=True):
         pl.xlabel('Fraction of max(hit)',fontsize=18)
         pl.ylabel('Noise Level ($\mu$K$_{\\rm CMB}$.arcmin)',fontsize=18)
         pl.show()
-    print '#############'
+    print '#######################################'
 
 def ukam(net_per_array, npix, tobs, pixel_size):
     """
