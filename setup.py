@@ -28,11 +28,10 @@ from setuptools import setup
 
 if __name__ == "__main__":
     setup(name='LaFabrique',
-        version='1.0.0',
+        version='0.1.0',
         author='Julien Peloton',
         author_email='j.peloton@sussex.ac.uk',
         url='https://github.com/JulienPeloton/LaFabrique',
-        # package_dir = {'LaFabrique': 'src'},
         install_requires=['healpy', 'h5py', 'ephem', 'weave'],
         packages=['LaFabrique'],
         description='Generate simulated datasets for CMB experiments',
