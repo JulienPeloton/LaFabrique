@@ -221,7 +221,7 @@ def main_noise_MC_loop(m1, inst, center=[0, 0], comm=None):
                 partial=True,
                 extra_header=[
                     ('name', 'SO noise maps'),
-                    ('sigma_p [uK.arcmin]', m1.sigma_p)])
+                    ('sigma_p', m1.sigma_p, 'uK.arcmin')])
 
     if inst.plot is True:
         import pylab as pl

@@ -11,7 +11,7 @@ except:
     ## weave has been removed from scipy version > 0.18
     import weave
 
-DEBUG = True
+DEBUG = False
 
 def date_to_greg(date):
     date_ = str(date)
@@ -58,6 +58,22 @@ def file_path(o, j):
         '.fits'])
     path = os.path.join(o.output_dir, fname)
     return path
+
+def add_hierarch(lis):
+    """
+    Convert in correct format for fits header.
+
+    Parameters
+    ------------
+        * lis: list, contains tuples (keyword, value [, comment])
+
+    """
+    for i, item in enumerate(lis):
+        if len(item) == 3:
+            lis[i]= ('HIERARCH '+item[0],item[1],item[2])
+        else:
+            lis[i]= ('HIERARCH '+item[0],item[1])
+    return lis
 
 def write_output_single(sky_freq, o, Config, i, extra_header):
     path = file_path(o, i)
@@ -225,16 +241,19 @@ def write_map(
     """
     Wrapper around heapy write_map function
     """
-
+    for c in column_names:
+        extra_header.append(('column_names', c))
+    extra_header = add_hierarch(extra_header)
     hp.write_map(
         path,
         data,
         fits_IDL=fits_IDL,
         coord=coord,
-        column_names=column_names,
+        column_names=None,
         column_units=column_units,
         partial=partial,
         extra_header=extra_header)
+
 
 @benchmark
 def load_hdf5_data(fn):
@@ -318,6 +337,7 @@ def compute_weights_fullmap(map1, out, masktot):
 
     ## Inversion per block
     det = map1.cc[masktot] * map1.ss[masktot] - map1.cs[masktot]**2
+    det[det == 0.0] = 1e-30
 
     a00 = 1. / det * (map1.ss[masktot])
     a01 = 1. / det * (-map1.cs[masktot])

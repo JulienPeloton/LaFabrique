@@ -38,9 +38,9 @@ def generate_covariances(m1, inst):
             [Iw, Pw, Pw],
             fits_IDL=False,
             coord='C',
-            column_names=['I_WEIGHT', 'P_WEIGHT', 'PP_WEIGHT'],
-            column_units=['uK2_CMB', 'uK2_CMB', 'uK2_CMB'],
+            column_names=['I', 'P', 'P'],
+            column_units=['1/uK2_CMB', '1/uK2_CMB', '1/uK2_CMB'],
             partial=True,
             extra_header=[
                 ('name', 'SO weight maps'),
-                ('sigma_p [uK.arcmin]', m1.sigma_p)])
+                ('sigma_p', m1.sigma_p, 'uK.arcmin')])
