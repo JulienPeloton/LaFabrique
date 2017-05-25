@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (C) 2016 Peloton
-"""Distutils based setup script for lenscov.
+# Copyright (C) 2017 Peloton
+"""Distutils based setup script for LaFabrique.
 
 For the easiest installation just type the command (you'll probably need
 root privileges for that):
