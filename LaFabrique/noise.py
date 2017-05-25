@@ -98,6 +98,17 @@ def generate_noise_sims(config_file, comm=None, env=None):
 
         comm.barrier()
 
+    if comm.rank == 0:
+        cov_combined = covariance.inverse_noise_weighted_coaddition(
+            m1_output,
+            instrument,
+            folder_of_covs=instrument.outpath_masks,
+            list_of_covs=None,
+            temp_only=False,
+            save_on_disk=True)
+
+    comm.barrier()
+
 def modify_input(m1, inst):
     """
     Modify the input observations to match the desired output noise level.
