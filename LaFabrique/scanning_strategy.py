@@ -287,8 +287,8 @@ def compute_RA_Dec_PA(
             pb_az / radToDeg, el / radToDeg)
 
         if t == 0:
-            pb_az += az_speed*pb_az_dir/sampling_freq
-            experience.inst.date += ephem.second/sampling_freq
+            pb_az += az_speed * pb_az_dir / sampling_freq
+            experience.inst.date += ephem.second / sampling_freq
             continue
 
         delta_ra = pb_ra_array[t] - pb_ra_array[t-1]
@@ -301,7 +301,7 @@ def compute_RA_Dec_PA(
             delta_ra -= 2.*np.pi
         ## Put in parallactic angle things
         parallactic_angle[t] = np.arctan(
-            (delta_dec)/(delta_ra * np.cos(pb_dec_array[t])))
+            (delta_dec) / (delta_ra * np.cos(pb_dec_array[t])))
 
         ## Add HWP-like effect
         parallactic_angle[t] += 4 * HWP_pos[t]
@@ -313,10 +313,10 @@ def compute_RA_Dec_PA(
             pb_az_dir = 1.
 
         ## Increment the azimuth
-        pb_az += az_speed*pb_az_dir/sampling_freq
+        pb_az += az_speed * pb_az_dir / sampling_freq
 
         ## Increment the time by one second / sampling rate
-        experience.inst.date += ephem.second/sampling_freq
+        experience.inst.date += ephem.second / sampling_freq
 
     return pb_ra_array, pb_dec_array, parallactic_angle
 
