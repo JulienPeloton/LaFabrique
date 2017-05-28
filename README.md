@@ -42,7 +42,7 @@ export PYTHONPATH=$PYTHONPATH:$LaFabriquePATH
 ### Usage
 You can find ini files to have a quick usage:
 
-```python
+```bash
 python generate_dataset.py -h
 python generate_dataset.py -setup_env setup_env.ini <other options>
 ```
@@ -52,7 +52,7 @@ simulations at high resolution (simulation of scan strategy and
 foregrounds are done serially for the moment).
 For example, just use (replace mpirun by your favourite one):
 
-```python
+```bash
 mpirun -n <nproc> python generate_dataset.py
     -setup_env setup_env.ini
     -setup_scanning setup_scanning.ini
