@@ -3,7 +3,7 @@ LaFabrique [![Build Status](https://travis-ci.org/JulienPeloton/LaFabrique.svg?b
 
 ![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/outputs.png)
 
-#### The package
+## The package
 This package contains scripts for generating simulated CMB datasets (current and future)
 * Noise
     * Generate (inhomogeneous) noise maps
@@ -16,7 +16,7 @@ This package contains scripts for generating simulated CMB datasets (current and
 * Sky coverage
     * Scanning strategy simulator included
 
-### Before starting
+## Before starting
 This code has the following dependencies (see the travis install section):
 * numpy, pylab, scipy, etc (required)
 * healpy >= 1.9.1 (required)
@@ -39,7 +39,7 @@ LaFabriquePATH=/path/to/the/package
 export PYTHONPATH=$PYTHONPATH:$LaFabriquePATH
 ```
 
-### Usage
+## Usage
 You can find ini files to have a quick usage:
 
 ```bash
@@ -69,6 +69,6 @@ for all MC simulations (corresponds to 48[proc] * 8[freq] = 384 calls below).
 
 ![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/perf_100MC_nside2048.png)
 
-### License
+## License
 GNU License (see the LICENSE file for details) covers all files
 in the LaFabrique repository unless stated otherwise.

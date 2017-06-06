@@ -11,8 +11,8 @@ def generate_covariances(m1, inst):
 
     Parameters
     ----------
-    * m1: object, contain the observations
-    * inst: object, contain the input parameters from the ini file
+        * m1: object, contain the observations
+        * inst: object, contain the input parameters from the ini file
 
     """
     nside = m1.mapinfo.nside
