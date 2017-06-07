@@ -31,6 +31,7 @@ if __name__ == "__main__":
         author='Julien Peloton',
         author_email='j.peloton@sussex.ac.uk',
         url='https://github.com/JulienPeloton/LaFabrique',
+        download_url='https://github.com/JulienPeloton/LaFabrique/archive/0.1.1.zip',
         install_requires=['healpy', 'h5py', 'ephem', 'weave'],
         packages=['LaFabrique'],
         description='Generate simulated datasets for CMB experiments',
