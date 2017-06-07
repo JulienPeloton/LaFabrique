@@ -22,16 +22,15 @@ To get a full list of avaiable commands, read the output of:
 
     python setup.py --help-commands
 """
-from setuptools import find_packages
 from setuptools import setup
 
 if __name__ == "__main__":
     setup(name='LaFabrique',
-        version='0.1.3',
+        version='0.1.4',
         author='Julien Peloton',
         author_email='j.peloton@sussex.ac.uk',
         url='https://github.com/JulienPeloton/LaFabrique',
-        download_url='https://github.com/JulienPeloton/LaFabrique/archive/0.1.3.zip',
+        download_url='https://github.com/JulienPeloton/LaFabrique/archive/0.1.4.zip',
         install_requires=['healpy', 'h5py', 'ephem', 'weave'],
         packages=['LaFabrique'],
         description='Generate simulated datasets for CMB experiments',
