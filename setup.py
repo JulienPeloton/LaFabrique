@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Copyright (C) 2017 Peloton
 """Distutils based setup script for LaFabrique.
 
 For the easiest installation just type the command (you'll probably need
@@ -28,13 +27,14 @@ from setuptools import setup
 
 if __name__ == "__main__":
     setup(name='LaFabrique',
-        version='0.1.0',
+        version='0.1.1',
         author='Julien Peloton',
         author_email='j.peloton@sussex.ac.uk',
         url='https://github.com/JulienPeloton/LaFabrique',
         install_requires=['healpy', 'h5py', 'ephem', 'weave'],
         packages=['LaFabrique'],
         description='Generate simulated datasets for CMB experiments',
+        keywords=['CMB', 'simulations', 'experiments'],
         classifiers=[
             "Programming Language :: Python :: 2",
             'Programming Language :: Python :: 2.7'],)
