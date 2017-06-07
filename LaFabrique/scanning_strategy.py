@@ -21,8 +21,22 @@ except:
     ## weave has been removed from scipy version > 0.18
     import weave
 
+try:
+    from InsideMe import profiler
+except:
+    ## InsideMe will be released soon ;-)
+    ## Stay tuned for a new great package
+    class profiler():
+        @staticmethod
+        def benchmark(field=''):
+            def outer_wrapper(func):
+                def inner_wrapper(*args, **kwargs):
+                    return func(*args, **kwargs)
+                return inner_wrapper
+            return outer_wrapper
+
 # ## numerical constants
-radToDeg = 180/np.pi
+radToDeg = 180 / np.pi
 sidDayToSec = 86164.0905
 
 def generate_scans(config_file, env=None):
@@ -139,7 +153,7 @@ class instrument(object):
 
         return pb
 
-@benchmark
+@profiler.benchmark(field='Convolve focal plane')
 def convolve_focalplane(
         bore_nHits, bore_cos, bore_sin, bore_cs,
         nbolos, fp_radius_amin, boost):
@@ -236,7 +250,7 @@ def convolve_focalplane(
 
     return focalplane_nHits, focalplane_cos, focalplane_sin, focalplane_cossin
 
-@benchmark
+@profiler.benchmark(field='Generate pointing')
 def compute_RA_Dec_PA(
         experience, num_pts,
         pb_az, upper_az, lower_az, pb_az_dir, az_speed,
@@ -320,7 +334,7 @@ def compute_RA_Dec_PA(
 
     return pb_ra_array, pb_dec_array, parallactic_angle
 
-@benchmark
+@profiler.benchmark(field='Mapmaking')
 def project_data_on_sky(nside, pb_ra_array, pb_dec_array, parallactic_angle):
     """
     Simple map-making: project time ordered data into sky maps.

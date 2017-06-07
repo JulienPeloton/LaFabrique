@@ -11,6 +11,21 @@ except:
     ## weave has been removed from scipy version > 0.18
     import weave
 
+try:
+    from InsideMe import profiler
+except:
+    ## InsideMe will be released soon ;-)
+    ## Stay tuned for a new great package
+    class profiler():
+        @staticmethod
+        def benchmark(field=''):
+            def outer_wrapper(func):
+                def inner_wrapper(*args, **kwargs):
+                    return func(*args, **kwargs)
+                return inner_wrapper
+            return outer_wrapper
+
+
 DEBUG = False
 
 def date_to_greg(date):
@@ -172,7 +187,7 @@ def benchmark(func):
             return func(*args, **kwargs)
     return wrapper
 
-@benchmark
+@profiler.benchmark(field='Map manipulation')
 def rot_sky_map(data, header=None, coord=['G', 'C']):
     """
     Rotate a sky map from one coordinate system to another.
@@ -227,14 +242,14 @@ def rot_sky_map(data, header=None, coord=['G', 'C']):
     else:
         return data
 
-@benchmark
+@profiler.benchmark(field='Map manipulation')
 def ud_grade(m_in, nside_out):
     """
     Wrapper around healpy function
     """
     return hp.ud_grade(m_in, nside_out)
 
-@benchmark
+@profiler.benchmark(field='IO')
 def write_map(
         path, data, fits_IDL=False, coord='C',
         column_names=[''], column_units=[''], partial=True, extra_header=[]):
@@ -254,8 +269,7 @@ def write_map(
         partial=partial,
         extra_header=extra_header)
 
-
-@benchmark
+@profiler.benchmark(field='IO')
 def load_hdf5_data(fn):
     """
     Load hdf5 file
@@ -271,7 +285,7 @@ def load_hdf5_data(fn):
     """
     return InputScan.load(fn)
 
-@benchmark
+@profiler.benchmark(field='Map manipulation')
 def change_resolution(map1, nside_out):
     """
     Change the resolution of the input map
@@ -291,7 +305,7 @@ def change_resolution(map1, nside_out):
         print 'NSIDE_OUT', map1.mapinfo.nside
     return map1
 
-@benchmark
+@profiler.benchmark(field='Map manipulation')
 def partial2full(partial, obspix, nside, fill_with_nan=True):
     """
     Convert partial map into full sky map
@@ -316,7 +330,7 @@ def partial2full(partial, obspix, nside, fill_with_nan=True):
     full[obspix] = partial
     return full
 
-@benchmark
+@profiler.benchmark(field='Computation')
 def compute_weights_fullmap(map1, out, masktot):
     """
     Perform Cholesky decomposition of the covariance matrice
@@ -430,7 +444,7 @@ def compute_weights_fullmap(map1, out, masktot):
 
     return coupling[:,0,0], coupling[:,1,1], coupling[:,1,0]
 
-@benchmark
+@profiler.benchmark(field='Computation')
 def qu_weight_mineig(cc, cs, ss, epsilon=0., verbose=False):
     '''
     Create a weight map using the smaller eigenvalue of the polarization matrix
