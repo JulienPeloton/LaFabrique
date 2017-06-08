@@ -24,16 +24,19 @@ To get a full list of avaiable commands, read the output of:
 """
 from setuptools import setup
 
+## Give the github link inside the longdescription, and add requirements.txt
 if __name__ == "__main__":
     setup(name='LaFabrique',
-        version='0.1.10',
+        version='0.1.11',
         author='Julien Peloton',
         author_email='j.peloton@sussex.ac.uk',
         url='https://github.com/JulienPeloton/LaFabrique',
-        download_url='https://github.com/JulienPeloton/LaFabrique/archive/0.1.10.zip',
+        download_url='https://github.com/JulienPeloton/LaFabrique/archive/0.1.11.zip',
         install_requires=['healpy', 'h5py', 'ephem', 'weave'],
         packages=['LaFabrique'],
         description='Generate simulated datasets for CMB experiments',
+        license='GPL-3.0',
+        long_description='See https://github.com/JulienPeloton/LaFabrique',
         keywords=['CMB', 'simulations', 'experiments'],
         classifiers=[
             "Programming Language :: Python :: 2",
