@@ -27,7 +27,14 @@ This code has the following dependencies (see the travis install section):
 * PySM (optional - foreground generation see https://github.com/bthorne93/PySM_public)
 
 ## Installation
-We provide a setup.py for the installation. Just run:
+
+You can easily install the package using pip
+```bash
+pip install LaFabrique
+```
+
+Otherwise, you can clone the repo from the github repository and
+use the setup.py for the installation. Just run:
 ```bash
 python setup.py install
 ```

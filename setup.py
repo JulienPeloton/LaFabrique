@@ -24,7 +24,6 @@ To get a full list of avaiable commands, read the output of:
 """
 from setuptools import setup
 
-## Give the github link inside the longdescription, and add requirements.txt
 if __name__ == "__main__":
     setup(name='LaFabrique',
         version='0.1.11',
