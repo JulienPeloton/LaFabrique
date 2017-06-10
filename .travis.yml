@@ -9,7 +9,6 @@ install:
     - pip install h5py
     - pip install healpy
     - pip install ephem
-    - pip install InsideMe
     - python setup.py install
 
 script:
