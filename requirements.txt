@@ -6,3 +6,4 @@ h5py==2.6.0
 healpy==1.9.1
 epehem==3.7.6.0
 mpi4py==2.0.0
+InsideMe==0.2.0

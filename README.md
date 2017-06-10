@@ -24,7 +24,8 @@ This code has the following dependencies (see the travis install section):
 * weave (optional if scipy <= v0.18 - required otherwise because no longer part of scipy v0.19)
 * ephem (required - for scanning strategy)
 * mpi4py (optional - for parallel computing)
-* PySM (optional - foreground generation see https://github.com/bthorne93/PySM_public)
+* InsideMe (optional - for profiling of the code, see https://github.com/JulienPeloton/InsideMe)
+* PySM (optional - foreground generation, see https://github.com/bthorne93/PySM_public)
 
 ## Installation
 
