@@ -31,7 +31,8 @@ DEBUG = False
 def date_to_greg(date):
     date_ = str(date)
     date_ = str(date.datetime())
-    return date_.split('.')[0].replace('-','').replace(':','').replace(' ','_')
+    return date_.split(
+        '.')[0].replace('-', '').replace(':', '').replace(' ', '_')
 
 def rad2am(rad):
     """
@@ -85,9 +86,9 @@ def add_hierarch(lis):
     """
     for i, item in enumerate(lis):
         if len(item) == 3:
-            lis[i]= ('HIERARCH '+item[0],item[1],item[2])
+            lis[i] = ('HIERARCH ' + item[0], item[1], item[2])
         else:
-            lis[i]= ('HIERARCH '+item[0],item[1])
+            lis[i] = ('HIERARCH ' + item[0], item[1])
     return lis
 
 def write_output_single(sky_freq, o, Config, i, extra_header):
@@ -379,8 +380,7 @@ def compute_weights_fullmap(map1, out, masktot):
         # e = np.sqrt(eigenvalue_min)
         e = np.sqrt(mat[0][0])
 
-        return np.array( [[e, 0.], [0., e]] )
-
+        return np.array([[e, 0.], [0., e]])
 
     def unsafe_cholesky_C(mat, lapack='"mkl_lapack.h"'):
         """
@@ -442,7 +442,7 @@ def compute_weights_fullmap(map1, out, masktot):
         coupling = np.array(
             [eigenvalue_approximation(mat) for mat in mat_full])
 
-    return coupling[:,0,0], coupling[:,1,1], coupling[:,1,0]
+    return coupling[:, 0, 0], coupling[:, 1, 1], coupling[:, 1, 0]
 
 @profiler.benchmark(field='Computation')
 def qu_weight_mineig(cc, cs, ss, epsilon=0., verbose=False):
